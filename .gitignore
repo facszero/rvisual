@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+inst/doc
+/doc
+/Meta
+/man/*.Rd
+NAMESPACE
+*.o
+*.so
+*.dll
+/src/*.o
+/src/*.so
+*.tar.gz

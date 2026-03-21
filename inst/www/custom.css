@@ -1,0 +1,64 @@
+/* RVisual — Estilos personalizados */
+
+/* Tipografía y base */
+body {
+  font-size: 14px;
+}
+
+/* Navbar compacta */
+.navbar {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Cards con menos padding */
+.card-body {
+  padding: 12px;
+}
+
+.card-header {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+/* Botones de operación en el constructor */
+.btn.text-start {
+  text-align: left !important;
+}
+
+/* Tabla DT más compacta */
+.dataTables_wrapper {
+  font-size: 13px;
+}
+
+/* Chat de IA */
+#chat_messages pre {
+  font-size: 12px;
+  background: #f8f9fa;
+}
+
+/* Stack de operaciones */
+.operation-item {
+  font-size: 13px;
+  border-left: 3px solid #2C6FAC;
+  padding-left: 8px;
+}
+
+/* Código generado */
+pre#code_display {
+  font-family: "Fira Code", "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #212529;
+}
+
+/* Badge de proveedor */
+.badge.bg-secondary {
+  font-size: 11px;
+}
+
+/* Helpers */
+.text-muted {
+  font-size: 12px;
+}

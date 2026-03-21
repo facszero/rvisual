@@ -1,0 +1,4 @@
+Name: RVisual — Análisis Visual de Datos
+Description: Abre la interfaz visual de RVisual para explorar, transformar y analizar datos con asistencia de IA.
+Binding: launch_rvisual
+Interactive: true
