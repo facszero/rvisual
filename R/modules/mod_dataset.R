@@ -1,178 +1,266 @@
-#' Módulo: Panel Dataset
-#'
-#' Permite al usuario:
-#' - Ver los data.frames disponibles en el entorno global
-#' - Cargar archivos externos (CSV, Excel, RDS)
-#' - Seleccionar el dataset activo de trabajo
-#' - Ver un resumen rápido del dataset seleccionado
+# mod_dataset.R — Panel de gestión de datasets
+# RVisual — Addin RStudio para usuarios de SPSS
+# Permite cargar archivos (CSV, Excel, RDS, SAV) y detectar data.frames en memoria
 
-# ── UI ────────────────────────────────────────────────────────────────────
+library(shiny)
+library(miniUI)
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+
 mod_dataset_ui <- function(id) {
-  ns <- shiny::NS(id)
+  ns <- NS(id)
 
-  bslib::layout_columns(
-    col_widths = c(4, 8),
+  tagList(
+    # Estilos inline del panel
+    tags$style(HTML(paste0("
+      #", ns("panel_carga"), " { margin-bottom: 12px; }
+      .ds-badge { font-size: 11px; padding: 2px 7px; border-radius: 10px;
+                  background: #e8f4fd; color: #1a6fa8; font-weight: 600; }
+      .ds-row-active { background-color: #f0f7ff !important; font-weight: 600; }
+      .ds-hint { font-size: 12px; color: #888; margin-top: 4px; }
+    "))),
 
-    # Columna izquierda: lista de datasets + carga
-    bslib::card(
-      bslib::card_header(shiny::icon("database"), " Datasets en memoria"),
-      shiny::actionButton(ns("btn_refresh"), "Actualizar lista",
-                          icon = shiny::icon("rotate"),
-                          class = "btn-sm btn-outline-primary mb-2 w-100"),
-      shiny::uiOutput(ns("dataset_list")),
-      bslib::card_footer(
-        shiny::actionButton(ns("btn_load_file"), "Cargar archivo...",
-                            icon = shiny::icon("folder-open"),
-                            class = "btn-primary w-100")
+    fluidRow(
+      # ── Columna izquierda: Carga de archivos ──────────────────────────────
+      column(5,
+        div(id = ns("panel_carga"),
+          h5(icon("folder-open"), " Cargar archivo", style = "margin-top:0"),
+          fileInput(ns("archivo"),
+            label    = NULL,
+            accept   = c(".csv", ".xlsx", ".xls", ".rds", ".sav"),
+            buttonLabel = "Seleccionar…",
+            placeholder = "CSV, Excel, RDS, SAV"
+          ),
+          # Opciones CSV (se muestran solo si el archivo es CSV)
+          conditionalPanel(
+            condition = paste0("output['", ns("es_csv"), "']"),
+            wellPanel(style = "padding:8px; background:#f8f9fa;",
+              fluidRow(
+                column(6, selectInput(ns("csv_sep"),   "Separador",
+                  choices = c("Coma (,)" = ",", "Punto y coma (;)" = ";",
+                              "Tab" = "\t", "Espacio" = " "),
+                  selected = ",")),
+                column(6, selectInput(ns("csv_enc"),   "Encoding",
+                  choices = c("UTF-8" = "UTF-8", "Latin-1" = "latin1"),
+                  selected = "UTF-8"))
+              ),
+              checkboxInput(ns("csv_header"), "Primera fila = encabezado", value = TRUE)
+            )
+          ),
+          # Nombre del dataset
+          textInput(ns("nombre_ds"), "Nombre del dataset", placeholder = "ej: datos_encuesta"),
+          actionButton(ns("btn_cargar"), "Cargar", icon = icon("upload"),
+                       class = "btn-primary btn-sm"),
+          div(class = "ds-hint", textOutput(ns("msg_carga")))
+        ),
+
+        hr(),
+
+        # ── Data.frames detectados en el entorno global ──────────────────────
+        h5(icon("database"), " Entorno global"),
+        div(class = "ds-hint", "Data.frames disponibles en memoria:"),
+        uiOutput(ns("lista_entorno")),
+        actionButton(ns("btn_refresh"), icon("sync"), label = " Actualizar",
+                     class = "btn-sm btn-outline-secondary", style = "margin-top:6px")
+      ),
+
+      # ── Columna derecha: Datasets cargados ────────────────────────────────
+      column(7,
+        h5(icon("table"), " Datasets activos"),
+        div(style = "min-height: 100px;",
+          uiOutput(ns("lista_datasets"))
+        ),
+        hr(),
+        # Info del dataset seleccionado
+        uiOutput(ns("info_dataset"))
       )
-    ),
-
-    # Columna derecha: resumen del dataset activo
-    bslib::card(
-      bslib::card_header(shiny::icon("circle-info"), " Resumen del dataset activo"),
-      shiny::uiOutput(ns("dataset_summary"))
     )
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
-mod_dataset_server <- function(id, active_dataset, active_name, history) {
-  shiny::moduleServer(id, function(input, output, session) {
+
+# ── Server ────────────────────────────────────────────────────────────────────
+
+mod_dataset_server <- function(id, rv_global) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Lista de datasets en entorno global
-    available_datasets <- shiny::reactive({
-      input$btn_refresh  # trigger on refresh
-      discover_datasets()
-    })
+    # Estado reactivo local
+    rv <- reactiveValues(
+      datasets    = list(),   # lista nombrada de data.frames cargados
+      seleccionado = NULL     # nombre del dataset activo
+    )
 
-    # Renderizar lista de datasets como botones seleccionables
-    output$dataset_list <- shiny::renderUI({
-      datasets <- available_datasets()
-      if (length(datasets) == 0) {
-        return(shiny::p("No hay data.frames en el entorno.",
-                        class = "text-muted small"))
+    # ── ¿Es CSV? (para mostrar opciones) ────────────────────────────────────
+    output$es_csv <- reactive({
+      req(input$archivo)
+      tolower(tools::file_ext(input$archivo$name)) == "csv"
+    })
+    outputOptions(output, "es_csv", suspendWhenHidden = FALSE)
+
+    # ── Cargar archivo ───────────────────────────────────────────────────────
+    observeEvent(input$btn_cargar, {
+      req(input$archivo)
+
+      archivo  <- input$archivo
+      ext      <- tolower(tools::file_ext(archivo$name))
+      nombre   <- trimws(input$nombre_ds)
+      if (nchar(nombre) == 0) nombre <- tools::file_path_sans_ext(archivo$name)
+      nombre   <- make.names(nombre)   # nombre R válido
+
+      df <- tryCatch({
+        switch(ext,
+          csv  = read.csv(archivo$datapath,
+                          sep    = input$csv_sep,
+                          header = input$csv_header,
+                          fileEncoding = input$csv_enc,
+                          stringsAsFactors = FALSE),
+          xlsx = ,
+          xls  = readxl::read_excel(archivo$datapath),
+          rds  = readRDS(archivo$datapath),
+          sav  = haven::read_sav(archivo$datapath),
+          stop("Formato no soportado: ", ext)
+        )
+      }, error = function(e) { showNotification(paste("Error al cargar:", e$message),
+                                                 type = "error"); NULL })
+
+      if (!is.null(df) && is.data.frame(df)) {
+        rv$datasets[[nombre]] <- as.data.frame(df)
+        rv$seleccionado <- nombre
+        # Propagar al estado global si existe
+        if (!is.null(rv_global)) {
+          rv_global$datasets[[nombre]]   <- rv$datasets[[nombre]]
+          rv_global$ds_activo            <- nombre
+        }
+        output$msg_carga <- renderText(paste0("✔ '", nombre, "' cargado (",
+                                               nrow(df), " filas × ", ncol(df), " cols)"))
       }
-      shiny::tagList(
-        lapply(datasets, function(ds) {
-          is_active <- identical(active_name(), ds$name)
-          shiny::actionButton(
-            inputId = ns(paste0("select_", ds$name)),
-            label   = shiny::tagList(
-              shiny::tags$strong(ds$name),
-              shiny::tags$small(
-                glue::glue(" [{ds$nrow} x {ds$ncol}]"),
-                class = "text-muted"
-              )
-            ),
-            class = paste("btn w-100 text-start mb-1",
-                          if (is_active) "btn-primary" else "btn-outline-secondary")
-          )
-        })
-      )
     })
 
-    # Observar clicks en cada dataset de la lista
-    shiny::observe({
-      datasets <- available_datasets()
-      lapply(datasets, function(ds) {
-        shiny::observeEvent(input[[paste0("select_", ds$name)]], {
-          df <- get(ds$name, envir = .GlobalEnv)
-          active_dataset(df)
-          active_name(ds$name)
-          history_log(history, "dataset_selected", list(name = ds$name))
+    # ── Detectar data.frames en el entorno global ────────────────────────────
+    dfs_entorno <- reactive({
+      input$btn_refresh  # dependencia reactiva para refrescar
+      objs <- ls(envir = .GlobalEnv)
+      objs[sapply(objs, function(x) is.data.frame(get(x, envir = .GlobalEnv)))]
+    })
+
+    output$lista_entorno <- renderUI({
+      dfs <- dfs_entorno()
+      if (length(dfs) == 0) {
+        return(div(class = "ds-hint", "No hay data.frames en el entorno."))
+      }
+      tagList(lapply(dfs, function(nm) {
+        df_tmp <- get(nm, envir = .GlobalEnv)
+        div(style = "margin-bottom:4px;",
+          actionLink(ns(paste0("env_", nm)), nm,
+                     style = "font-size:13px; text-decoration:none;"),
+          span(class = "ds-badge", paste0(nrow(df_tmp), "×", ncol(df_tmp)))
+        )
+      }))
+    })
+
+    # Click en dataset del entorno → importar al panel
+    observe({
+      dfs <- dfs_entorno()
+      lapply(dfs, function(nm) {
+        observeEvent(input[[paste0("env_", nm)]], {
+          rv$datasets[[nm]]  <- get(nm, envir = .GlobalEnv)
+          rv$seleccionado    <- nm
+          if (!is.null(rv_global)) {
+            rv_global$datasets[[nm]] <- rv$datasets[[nm]]
+            rv_global$ds_activo      <- nm
+          }
         }, ignoreInit = TRUE)
       })
     })
 
-    # Resumen del dataset activo
-    output$dataset_summary <- shiny::renderUI({
-      df <- active_dataset()
-      if (is.null(df)) {
-        return(shiny::p("Seleccioná un dataset para ver su resumen.",
-                        class = "text-muted"))
+    # ── Lista de datasets cargados ───────────────────────────────────────────
+    output$lista_datasets <- renderUI({
+      if (length(rv$datasets) == 0) {
+        return(div(class = "ds-hint",
+                   icon("info-circle"), " Ningún dataset cargado aún."))
       }
-      meta <- get_metadata(df, active_name())
-      render_dataset_summary_ui(meta)
+      tagList(lapply(names(rv$datasets), function(nm) {
+        df_tmp   <- rv$datasets[[nm]]
+        es_activo <- isTRUE(rv$seleccionado == nm)
+        div(
+          class = if (es_activo) "ds-row-active" else "",
+          style = "display:flex; align-items:center; gap:8px;
+                   padding:6px 8px; border-radius:6px; margin-bottom:4px;
+                   border: 1px solid #dee2e6; cursor:pointer;",
+          onclick = paste0("Shiny.setInputValue('", ns("click_ds"), "', '", nm,
+                           "', {priority:'event'})"),
+          icon(if (es_activo) "check-circle" else "circle", class = "text-primary"),
+          span(nm, style = "flex:1; font-size:13px;"),
+          span(class = "ds-badge", paste0(nrow(df_tmp), "×", ncol(df_tmp))),
+          actionButton(ns(paste0("rm_", nm)), label = NULL, icon = icon("trash"),
+                       class = "btn-sm btn-outline-danger",
+                       style = "padding:1px 5px; font-size:11px;",
+                       onclick = paste0("event.stopPropagation();"))
+        )
+      }))
     })
 
-    # Modal para carga de archivos
-    shiny::observeEvent(input$btn_load_file, {
-      shiny::showModal(
-        shiny::modalDialog(
-          title = "Cargar archivo",
-          shiny::fileInput(ns("file_upload"), "Seleccionar archivo",
-                           accept = c(".csv", ".xlsx", ".xls", ".rds", ".sav")),
-          shiny::textInput(ns("object_name"), "Nombre del objeto en R",
-                           placeholder = "ej: mis_datos"),
-          shiny::uiOutput(ns("file_options")),
-          footer = shiny::tagList(
-            shiny::modalButton("Cancelar"),
-            shiny::actionButton(ns("btn_confirm_load"), "Cargar",
-                                class = "btn-primary")
-          )
-        )
-      )
+    # Seleccionar dataset activo al hacer click
+    observeEvent(input$click_ds, {
+      nm <- input$click_ds
+      if (nm %in% names(rv$datasets)) {
+        rv$seleccionado <- nm
+        if (!is.null(rv_global)) rv_global$ds_activo <- nm
+      }
     })
 
-    # Confirmar carga de archivo
-    shiny::observeEvent(input$btn_confirm_load, {
-      shiny::req(input$file_upload)
-      tryCatch({
-        df <- load_file(
-          path      = input$file_upload$datapath,
-          extension = tools::file_ext(input$file_upload$name)
-        )
-        obj_name <- if (nchar(trimws(input$object_name)) > 0) {
-          make.names(input$object_name)
-        } else {
-          tools::file_path_sans_ext(input$file_upload$name)
-        }
-        assign(obj_name, df, envir = .GlobalEnv)
-        active_dataset(df)
-        active_name(obj_name)
-        history_log(history, "file_loaded",
-                    list(file = input$file_upload$name, object = obj_name))
-        shiny::removeModal()
-        shiny::showNotification(
-          glue::glue("'{obj_name}' cargado: {nrow(df)} filas × {ncol(df)} columnas"),
-          type = "message"
-        )
-      }, error = function(e) {
-        shiny::showNotification(paste("Error al cargar:", e$message), type = "error")
+    # Eliminar dataset
+    observe({
+      lapply(names(rv$datasets), function(nm) {
+        observeEvent(input[[paste0("rm_", nm)]], {
+          rv$datasets[[nm]] <- NULL
+          if (!is.null(rv_global)) rv_global$datasets[[nm]] <- NULL
+          if (isTRUE(rv$seleccionado == nm)) {
+            restantes <- names(rv$datasets)
+            rv$seleccionado <- if (length(restantes) > 0) restantes[1] else NULL
+            if (!is.null(rv_global)) rv_global$ds_activo <- rv$seleccionado
+          }
+        }, ignoreInit = TRUE)
       })
     })
 
-  })
-}
+    # ── Info del dataset seleccionado ────────────────────────────────────────
+    output$info_dataset <- renderUI({
+      req(rv$seleccionado)
+      nm  <- rv$seleccionado
+      df  <- rv$datasets[[nm]]
+      req(is.data.frame(df))
 
-# ── Helpers de UI ─────────────────────────────────────────────────────────
+      tipos <- sapply(df, function(col) {
+        cls <- class(col)[1]
+        switch(cls,
+          numeric   = "num", integer = "int", character = "chr",
+          factor    = "fct", logical = "lgl", Date = "date",
+          POSIXct   = "dttm", "otro")
+      })
 
-render_dataset_summary_ui <- function(meta) {
-  shiny::tagList(
-    bslib::value_box("Filas",    meta$nrow,  theme = "primary",   full_screen = FALSE),
-    bslib::value_box("Columnas", meta$ncol,  theme = "secondary", full_screen = FALSE),
-    shiny::tags$hr(),
-    shiny::tags$h6("Variables"),
-    shiny::tags$table(
-      class = "table table-sm table-striped",
-      shiny::tags$thead(
-        shiny::tags$tr(
-          shiny::tags$th("Nombre"),
-          shiny::tags$th("Tipo"),
-          shiny::tags$th("NA%")
+      tagList(
+        h6(icon("info-circle"), paste0(" ", nm),
+           style = "margin-bottom:6px; font-weight:700;"),
+        fluidRow(
+          column(4, div(class = "ds-badge", paste(nrow(df), "filas"))),
+          column(4, div(class = "ds-badge", paste(ncol(df), "columnas"))),
+          column(4, div(class = "ds-badge",
+                        paste(sum(sapply(df, function(x) any(is.na(x)))), "cols con NA")))
+        ),
+        tags$hr(style = "margin: 8px 0;"),
+        tags$small(
+          tags$b("Variables: "),
+          paste(paste0(names(tipos), " (", tipos, ")"), collapse = " · ")
         )
-      ),
-      shiny::tags$tbody(
-        lapply(seq_len(nrow(meta$columns)), function(i) {
-          col <- meta$columns[i, ]
-          shiny::tags$tr(
-            shiny::tags$td(col$name),
-            shiny::tags$td(shiny::tags$code(col$type)),
-            shiny::tags$td(sprintf("%.1f%%", col$na_pct))
-          )
-        })
       )
-    )
-  )
+    })
+
+    # ── Retornar dataset activo (para que otros módulos lo consuman) ──────────
+    return(reactive({
+      req(rv$seleccionado)
+      rv$datasets[[rv$seleccionado]]
+    }))
+  })
 }
