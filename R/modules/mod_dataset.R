@@ -109,9 +109,9 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       df <- tryCatch({
         switch(ext,
           csv  = read.csv(arch$datapath,
-                          sep          = input$csv_sep,
-                          header       = input$csv_header,
-                          fileEncoding = input$csv_enc,
+                          sep          = if (!is.null(input$csv_sep))  input$csv_sep  else ",",
+                          header       = if (!is.null(input$csv_header)) input$csv_header else TRUE,
+                          fileEncoding = if (!is.null(input$csv_enc))  input$csv_enc  else "UTF-8",
                           stringsAsFactors = FALSE),
           xlsx = , xls = readxl::read_excel(arch$datapath),
           rds  = readRDS(arch$datapath),
