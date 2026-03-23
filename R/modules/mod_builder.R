@@ -81,11 +81,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
 
     shiny::observeEvent(input$confirm_select, {
       shiny::req(input$sel_cols)
-      push_operation(operation_stack, history, op = list(
-        type    = "select",
-        cols    = input$sel_cols,
-        label   = paste("Seleccionar:", paste(input$sel_cols, collapse = ", "))
-      ))
+      push_operation(operation_stack, history, op = op_select(input$sel_cols))
       shiny::removeModal()
     })
 
@@ -127,13 +123,8 @@ mod_builder_server <- function(id, active_dataset, active_name,
 
     shiny::observeEvent(input$confirm_filter, {
       shiny::req(input$filter_col, input$filter_op, input$filter_val)
-      push_operation(operation_stack, history, op = list(
-        type   = "filter",
-        col    = input$filter_col,
-        op     = input$filter_op,
-        value  = input$filter_val,
-        label  = glue::glue("Filtrar: {input$filter_col} {input$filter_op} {input$filter_val}")
-      ))
+      push_operation(operation_stack, history,
+                     op = op_filter(input$filter_col, input$filter_op, input$filter_val))
       shiny::removeModal()
     })
 
