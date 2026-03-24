@@ -114,7 +114,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
           class = "text-muted"
         ))
       }
-      shiny::tagList(lapply(msgs, render_chat_message_ui))
+      shiny::tagList(lapply(msgs, render_chat_message_ui, ns = ns))
     })
 
     # Enviar prompt al agente
@@ -259,7 +259,7 @@ append_message <- function(chat_history, role, content, code = NULL) {
   chat_history(c(chat_history(), list(msg)))
 }
 
-render_chat_message_ui <- function(msg) {
+render_chat_message_ui <- function(msg, ns = identity) {
   is_user <- msg$role == "user"
   bg      <- if (is_user) "bg-primary text-white" else "bg-light border"
   align   <- if (is_user) "text-end" else "text-start"
@@ -270,20 +270,19 @@ render_chat_message_ui <- function(msg) {
       class = paste("d-inline-block rounded p-2 px-3", bg),
       style = "max-width:90%; font-size:14px;",
       shiny::p(msg$content, class = "mb-1"),
-      # Si hay código, mostrar bloque con dos botones
       if (!is.null(msg$code)) {
         shiny::tagList(
           shiny::tags$pre(class = "bg-white border rounded p-2 mt-2",
                           style = "font-size:12px; white-space:pre-wrap;", msg$code),
           shiny::div(class = "d-flex gap-2 mt-1",
             shiny::actionButton(
-              paste0("send_to_code_", msg$code_id),
+              ns(paste0("send_to_code_", msg$code_id)),
               "\u2192 Enviar a C\u00f3digo R",
               icon  = shiny::icon("code"),
               class = "btn-sm btn-primary"
             ),
             shiny::actionButton(
-              paste0("run_ai_code_", msg$code_id),
+              ns(paste0("run_ai_code_", msg$code_id)),
               "Ejecutar directo",
               icon  = shiny::icon("play"),
               class = "btn-sm btn-outline-success"
