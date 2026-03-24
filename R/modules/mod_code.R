@@ -95,10 +95,17 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
     shiny::observeEvent(input$confirm_run, {
       shiny::removeModal()
       result <- tryCatch({
-        eval(parse(text = generated_code()), envir = .GlobalEnv)
-        list(success = TRUE, message = "Ejecutado correctamente.")
+        # Capturar tanto el output textual como el valor retornado
+        output_lines <- utils::capture.output({
+          val <- eval(parse(text = generated_code()), envir = .GlobalEnv)
+          # Si el valor no es invisible, imprimirlo
+          if (!is.null(val)) print(val)
+        })
+        list(success = TRUE,
+             message = "Ejecutado correctamente.",
+             output  = if (length(output_lines) > 0) output_lines else NULL)
       }, error = function(e) {
-        list(success = FALSE, message = paste("Error:", e$message))
+        list(success = FALSE, message = paste("Error:", e$message), output = NULL)
       })
       execution_result(result)
     })
@@ -106,13 +113,29 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
     output$execution_result <- shiny::renderUI({
       res <- execution_result()
       if (is.null(res)) return(NULL)
-      if (res$success) {
-        shiny::div(class = "alert alert-success alert-dismissible mb-0",
+
+      status_box <- if (res$success) {
+        shiny::div(class = "alert alert-success mb-2",
                    shiny::icon("check-circle"), " ", res$message)
       } else {
-        shiny::div(class = "alert alert-danger alert-dismissible mb-0",
+        shiny::div(class = "alert alert-danger mb-2",
                    shiny::icon("triangle-exclamation"), " ", res$message)
       }
+
+      # Panel de output si hay resultado
+      output_box <- if (!is.null(res$output)) {
+        shiny::div(
+          shiny::tags$strong("Resultado:", style = "font-size:13px;"),
+          shiny::tags$pre(
+            class = "bg-dark text-light rounded p-3 mt-1",
+            style = "font-size:12px; max-height:300px; overflow-y:auto;",
+            paste(res$output, collapse = "\n")
+          )
+        )
+      }
+
+      shiny::tagList(status_box, output_box)
+    })
     })
 
     # Guardar como archivo .R

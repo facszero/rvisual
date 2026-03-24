@@ -231,13 +231,25 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
         if (!is.null(msg$code) && !is.null(msg$code_id)) {
           btn_id <- paste0("run_ai_code_", msg$code_id)
           shiny::observeEvent(input[[btn_id]], {
-            tryCatch({
-              eval(parse(text = msg$code), envir = .GlobalEnv)
-              shiny::showNotification("Código ejecutado correctamente.", type = "message")
-              history_log(history, "ai_code_executed", list(code = msg$code))
+            output_lines <- tryCatch({
+              utils::capture.output({
+                val <- eval(parse(text = msg$code), envir = .GlobalEnv)
+                if (!is.null(val)) print(val)
+              })
             }, error = function(e) {
-              shiny::showNotification(paste("Error:", e$message), type = "error")
+              paste("Error:", e$message)
             })
+            # Mostrar resultado como notificación + append al chat
+            if (length(output_lines) > 0 && !grepl("^Error:", output_lines[1])) {
+              shiny::showNotification("Ejecutado correctamente.", type = "message")
+              # Agregar resultado al chat como mensaje especial
+              append_message(chat_history,
+                             role    = "result",
+                             content = paste(output_lines, collapse = "\n"))
+            } else {
+              shiny::showNotification(paste(output_lines, collapse = " "), type = "error")
+            }
+            history_log(history, "ai_code_executed", list(code = msg$code))
           }, ignoreInit = TRUE, once = TRUE)
         }
       })
@@ -260,9 +272,26 @@ append_message <- function(chat_history, role, content, code = NULL) {
 }
 
 render_chat_message_ui <- function(msg, ns = identity) {
-  is_user <- msg$role == "user"
-  bg      <- if (is_user) "bg-primary text-white" else "bg-light border"
-  align   <- if (is_user) "text-end" else "text-start"
+  is_user   <- msg$role == "user"
+  is_result <- msg$role == "result"
+
+  if (is_result) {
+    return(shiny::div(
+      class = "mb-3",
+      shiny::div(
+        class = "border rounded p-2",
+        style = "background:#1e1e1e; font-family:monospace; font-size:12px;
+                 color:#d4d4d4; white-space:pre-wrap; max-height:250px; overflow-y:auto;",
+        shiny::tags$span(shiny::icon("terminal"),
+                         style = "color:#4ec9b0; margin-right:6px;"),
+        msg$content
+      ),
+      shiny::tags$small(msg$timestamp, class = "text-muted d-block mt-1")
+    ))
+  }
+
+  bg    <- if (is_user) "bg-primary text-white" else "bg-light border"
+  align <- if (is_user) "text-end" else "text-start"
 
   shiny::div(
     class = paste("mb-3", align),
