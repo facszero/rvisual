@@ -162,8 +162,23 @@ apply_single_operation <- function(df, op) {
       }
     },
     "group_summarise" = {
-      # TODO: expandir en Fase 3
-      df
+      p      <- op$params
+      grp_df <- dplyr::group_by(df, dplyr::across(dplyr::all_of(p$group_cols)))
+      exprs  <- lapply(names(p$summary_fns), function(new_col) {
+        fn_def  <- p$summary_fns[[new_col]]
+        fn_name <- fn_def$fn
+        src_col <- fn_def$col
+        na_rm   <- isTRUE(fn_def$na_rm)
+        if (fn_name == "n" || is.null(src_col)) {
+          rlang::expr(dplyr::n())
+        } else {
+          fn <- match.fun(fn_name)
+          if (na_rm) rlang::expr((!!fn)(.data[[!!src_col]], na.rm = TRUE))
+          else       rlang::expr((!!fn)(.data[[!!src_col]]))
+        }
+      })
+      names(exprs) <- names(p$summary_fns)
+      dplyr::summarise(grp_df, !!!exprs, .groups = "drop")
     },
     "mutate" = {
       df[[op$params$new_col]] <- eval(parse(text = op$params$expression), envir = df)
