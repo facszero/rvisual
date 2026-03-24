@@ -131,7 +131,7 @@ Acción visual → operation_model → code_generator → código R limpio
 | 3 | Constructor visual completo | ✅ Completo |
 | 4 | Generación de código + ejecución | ✅ Completo |
 | 5 | Integración IA multi-proveedor | ✅ Completo |
-| 6 | Guardar archivos + exportar resultados | 🔲 Pendiente |
+| 6 | Guardar archivos + exportar resultados | ✅ Completo |
 | 7 | UX, testing completo, CRAN | 🔲 Pendiente |
 
 ---

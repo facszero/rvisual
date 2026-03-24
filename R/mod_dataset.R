@@ -66,7 +66,9 @@ mod_dataset_ui <- function(id) {
           shiny::uiOutput(ns("lista_datasets"))
         ),
         shiny::hr(),
-        shiny::uiOutput(ns("info_dataset"))
+        shiny::uiOutput(ns("info_dataset")),
+        # ── Exportar dataset activo ────────────────────────────────────────
+        shiny::uiOutput(ns("export_panel"))
       )
     )
   )
@@ -276,6 +278,61 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         )
       )
     })
+
+    # ── Panel de exportación ──────────────────────────────────────────────
+    output$export_panel <- shiny::renderUI({
+      shiny::req(rv$seleccionado)
+      shiny::tagList(
+        shiny::tags$hr(style = "margin:10px 0;"),
+        shiny::h6(shiny::icon("download"), " Exportar dataset",
+                  style = "font-weight:700; margin-bottom:8px;"),
+        shiny::div(class = "d-flex gap-2 flex-wrap",
+          shiny::downloadButton(ns("export_csv"),  "CSV",
+            icon = shiny::icon("file-csv"),   class = "btn-sm btn-outline-success"),
+          shiny::downloadButton(ns("export_xlsx"), "Excel",
+            icon = shiny::icon("file-excel"), class = "btn-sm btn-outline-success"),
+          shiny::downloadButton(ns("export_rds"),  "RDS",
+            icon = shiny::icon("database"),   class = "btn-sm btn-outline-secondary")
+        )
+      )
+    })
+
+    output$export_csv <- shiny::downloadHandler(
+      filename = function() {
+        paste0(rv$seleccionado, "_", format(Sys.time(), "%Y%m%d_%H%M"), ".csv")
+      },
+      content = function(file) {
+        write.csv(rv$datasets[[rv$seleccionado]], file, row.names = FALSE)
+      },
+      contentType = "text/csv"
+    )
+
+    output$export_xlsx <- shiny::downloadHandler(
+      filename = function() {
+        paste0(rv$seleccionado, "_", format(Sys.time(), "%Y%m%d_%H%M"), ".xlsx")
+      },
+      content = function(file) {
+        if (!requireNamespace("writexl", quietly = TRUE)) {
+          write.csv(rv$datasets[[rv$seleccionado]], file, row.names = FALSE)
+          shiny::showNotification(
+            "writexl no instalado. Se guardó como CSV. Instalalo con: install.packages('writexl')",
+            type = "warning", duration = 8)
+        } else {
+          writexl::write_xlsx(rv$datasets[[rv$seleccionado]], file)
+        }
+      },
+      contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    output$export_rds <- shiny::downloadHandler(
+      filename = function() {
+        paste0(rv$seleccionado, "_", format(Sys.time(), "%Y%m%d_%H%M"), ".rds")
+      },
+      content = function(file) {
+        saveRDS(rv$datasets[[rv$seleccionado]], file)
+      },
+      contentType = "application/octet-stream"
+    )
 
   })
 }
