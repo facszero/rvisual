@@ -1,7 +1,13 @@
 #' Lanzar RVisual
 #'
-#' Punto de entrada del addin de RStudio.
+#' Abre la interfaz visual de RVisual como gadget de RStudio o en el browser.
+#'
+#' @param browser Lógico. Si TRUE abre en el browser del sistema (necesario
+#'   para que el Asistente IA pueda hacer requests HTTP). Default FALSE.
+#'
 #' @export
+#' @importFrom shiny runGadget runApp shinyApp dialogViewer
+#' @importFrom rstudioapi isAvailable
 launch_rvisual <- function(browser = FALSE) {
 
   # Subir límite de upload a 50 MB
@@ -11,7 +17,6 @@ launch_rvisual <- function(browser = FALSE) {
   server <- rvisual_server
 
   if (browser || !rstudioapi::isAvailable()) {
-    # Abrir en browser externo (necesario para que IA pueda hacer HTTP)
     shiny::runApp(
       shiny::shinyApp(ui = ui, server = server),
       launch.browser = TRUE
