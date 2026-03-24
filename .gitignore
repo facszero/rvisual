@@ -6,7 +6,7 @@
 inst/doc
 /doc
 /Meta
-/man/*.Rd
+# /man/*.Rd  # los .Rd deben versionarse para CRAN
 *.o
 *.so
 *.dll
