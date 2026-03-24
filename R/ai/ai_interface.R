@@ -178,10 +178,11 @@ build_system_prompt <- function(ctx) {
     "REGLAS:\n",
     "1. Generá SOLO código R usando dplyr/tidyr/pipe nativo (|>).\n",
     "2. No inventes columnas que no estén en la lista de variables.\n",
-    "3. Si el pedido es ambiguo, preguntá antes de asumir.\n",
-    "4. Explicá brevemente qué hace el código.\n",
-    "5. Encerrá el código R en bloque ```r ... ```.\n",
-    "6. Si el usuario menciona sintaxis SPSS, traducila al equivalente en R."
+    "3. SIEMPRE usá exactamente '", ctx$df_name, "' como nombre del dataset en el código. NUNCA uses otro nombre.\n",
+    "4. Si el pedido es ambiguo, preguntá antes de asumir.\n",
+    "5. Explicá brevemente qué hace el código.\n",
+    "6. Encerrá el código R en bloque ```r ... ```.\n",
+    "7. Si el usuario menciona sintaxis SPSS, traducila al equivalente en R."
   )
 }
 
