@@ -214,10 +214,11 @@ build_ai_context <- function(df, df_name, ops, include_rows = FALSE) {
 # ── Extracción de código ──────────────────────────────────────────────────
 
 extract_r_code_block <- function(text) {
-  pattern <- "```(?:r|R)?\\s*\\n?(.*?)```"
+  # (?s) = DOTALL: el punto captura también saltos de línea
+  pattern <- "(?s)```(?:r|R)?[ \t]*\n?(.*?)```"
   matches <- regmatches(text, regexpr(pattern, text, perl = TRUE))
   if (length(matches) == 0 || nchar(matches) == 0) return(NULL)
-  code <- gsub("```(?:r|R)?\\s*\\n?|```", "", matches, perl = TRUE)
+  code <- gsub("```(?:r|R)?[ \t]*\n?|```", "", matches, perl = TRUE)
   trimws(code)
 }
 
