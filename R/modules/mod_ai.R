@@ -144,7 +144,18 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       shiny::withProgress(message = "Consultando IA...", value = 0.5, {
         response <- tryCatch(
           ai_send(cfg, system_prompt = build_system_prompt(ctx), user_prompt = prompt_text),
-          error = function(e) list(error = e$message)
+          error = function(e) {
+            msg <- e$message
+            # Detectar error de red del viewer de RStudio
+            if (grepl("HTTP request|curl|conexi|connect|network|timeout", msg, ignore.case = TRUE)) {
+              msg <- paste0(
+                "No se pudo conectar con el proveedor IA.\n\n",
+                "El panel embebido de RStudio bloquea conexiones HTTP salientes.\n",
+                "Solución: reiniciá con launch_rvisual(browser = TRUE)"
+              )
+            }
+            list(error = msg)
+          }
         )
       })
 

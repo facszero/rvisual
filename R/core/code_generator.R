@@ -86,18 +86,17 @@ code_arrange <- function(p) {
 code_group_summarise <- function(p) {
   group_str <- paste(p$group_cols, collapse = ", ")
 
-  # Construir cada expresión de summarise
   sum_exprs <- vapply(names(p$summary_fns), function(new_col) {
-    fn_def   <- p$summary_fns[[new_col]]
-    fn_name  <- fn_def$fn      # ej: "mean", "sum", "n"
-    src_col  <- fn_def$col     # ej: "ingreso"
-    na_rm    <- fn_def$na_rm   # lógico
+    fn_def  <- p$summary_fns[[new_col]]
+    fn_name <- fn_def$fn
+    src_col <- fn_def$col    # puede ser NULL si fn == "n"
+    na_rm   <- fn_def$na_rm
 
-    if (fn_name == "n") {
-      glue::glue("{new_col} = dplyr::n()")
+    if (fn_name == "n" || is.null(src_col)) {
+      as.character(glue::glue("{new_col} = dplyr::n()"))
     } else {
       na_str <- if (isTRUE(na_rm)) ", na.rm = TRUE" else ""
-      glue::glue("{new_col} = {fn_name}({src_col}{na_str})")
+      as.character(glue::glue("{new_col} = {fn_name}({src_col}{na_str})"))
     }
   }, character(1))
 

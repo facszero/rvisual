@@ -60,15 +60,12 @@ provider_anthropic <- function(cfg, system_prompt, user_prompt) {
       system     = system_prompt,
       messages   = list(list(role = "user", content = user_prompt))
     )) |>
+    httr2::req_timeout(30) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
   parsed <- httr2::resp_body_json(resp)
-
-  if (!is.null(parsed$error)) {
-    stop(parsed$error$message)
-  }
-
+  if (!is.null(parsed$error)) stop(parsed$error$message)
   parsed$content[[1]]$text
 }
 
@@ -85,15 +82,12 @@ provider_openai <- function(cfg, system_prompt, user_prompt) {
         list(role = "user",   content = user_prompt)
       )
     )) |>
+    httr2::req_timeout(30) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
   parsed <- httr2::resp_body_json(resp)
-
-  if (!is.null(parsed$error)) {
-    stop(parsed$error$message)
-  }
-
+  if (!is.null(parsed$error)) stop(parsed$error$message)
   parsed$choices[[1]]$message$content
 }
 
@@ -102,7 +96,6 @@ provider_gemini <- function(cfg, system_prompt, user_prompt) {
   url      <- glue::glue(
     "https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={cfg$api_key}"
   )
-
   resp <- httr2::request(url) |>
     httr2::req_headers("Content-Type" = "application/json") |>
     httr2::req_body_json(list(
@@ -110,15 +103,12 @@ provider_gemini <- function(cfg, system_prompt, user_prompt) {
         parts = list(list(text = paste0(system_prompt, "\n\n", user_prompt)))
       ))
     )) |>
+    httr2::req_timeout(30) |>
     httr2::req_error(is_error = function(resp) FALSE) |>
     httr2::req_perform()
 
   parsed <- httr2::resp_body_json(resp)
-
-  if (!is.null(parsed$error)) {
-    stop(parsed$error$message)
-  }
-
+  if (!is.null(parsed$error)) stop(parsed$error$message)
   parsed$candidates[[1]]$content$parts[[1]]$text
 }
 
