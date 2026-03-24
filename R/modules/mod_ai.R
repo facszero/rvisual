@@ -54,7 +54,11 @@ mod_ai_ui <- function(id) {
         "Activar solo con datos no sensibles. Las filas se enviarán al proveedor IA externo."
       ),
       shiny::hr(),
-      shiny::uiOutput(ns("provider_badge"))
+      shiny::uiOutput(ns("provider_badge")),
+      shiny::hr(),
+      shiny::actionButton(ns("btn_test_conn"), "Probar conexión",
+                          icon = shiny::icon("plug"), class = "btn-sm btn-outline-secondary w-100"),
+      shiny::uiOutput(ns("conn_status"))
     )
   )
 }
@@ -144,18 +148,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       shiny::withProgress(message = "Consultando IA...", value = 0.5, {
         response <- tryCatch(
           ai_send(cfg, system_prompt = build_system_prompt(ctx), user_prompt = prompt_text),
-          error = function(e) {
-            msg <- e$message
-            # Detectar error de red del viewer de RStudio
-            if (grepl("HTTP request|curl|conexi|connect|network|timeout", msg, ignore.case = TRUE)) {
-              msg <- paste0(
-                "No se pudo conectar con el proveedor IA.\n\n",
-                "El panel embebido de RStudio bloquea conexiones HTTP salientes.\n",
-                "Solución: reiniciá con launch_rvisual(browser = TRUE)"
-              )
-            }
-            list(error = msg)
-          }
+          error = function(e) list(error = e$message)
         )
       })
 
@@ -180,6 +173,33 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
     # Limpiar chat
     shiny::observeEvent(input$btn_clear_chat, {
       chat_history(list())
+    })
+
+    # Probar conexión
+    shiny::observeEvent(input$btn_test_conn, {
+      cfg <- ai_config()
+      if (is.null(cfg) || is.null(cfg$provider)) {
+        output$conn_status <- shiny::renderUI(
+          shiny::div(class = "alert alert-warning small p-2 mt-2",
+                     "Configurá un proveedor en la pestaña Configuración."))
+        return()
+      }
+      output$conn_status <- shiny::renderUI(
+        shiny::div(class = "alert alert-info small p-2 mt-2", "Probando..."))
+      result <- tryCatch(
+        ai_test_connection(cfg),
+        error = function(e) list(success = FALSE, message = e$message)
+      )
+      output$conn_status <- shiny::renderUI({
+        if (result$success) {
+          shiny::div(class = "alert alert-success small p-2 mt-2",
+                     shiny::icon("check"), " Conexión OK")
+        } else {
+          shiny::div(class = "alert alert-danger small p-2 mt-2",
+                     shiny::icon("triangle-exclamation"), " ",
+                     result$message)
+        }
+      })
     })
 
     # Ejecutar código propuesto por IA (acción del usuario)
