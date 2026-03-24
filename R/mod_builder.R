@@ -1,6 +1,6 @@
-#' Módulo: Constructor Visual de Operaciones
+#' M\u00f3dulo: Constructor Visual de Operaciones
 
-# ── UI ────────────────────────────────────────────────────────────────────
+# -- UI --------------------------------------------------------------------
 mod_builder_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -30,7 +30,7 @@ mod_builder_ui <- function(id) {
       bslib::card(
         bslib::card_header("Operaciones aplicadas",
           bslib::tooltip(shiny::icon("circle-info"),
-            "Cada operación que agregás se apila aquí. Podés eliminar cualquiera.")
+            "Cada operaci\u00f3n que agreg\u00e1s se apila aqu\u00ed. Pod\u00e9s eliminar cualquiera.")
         ),
         shiny::uiOutput(ns("operation_stack_ui"))
       ),
@@ -42,13 +42,13 @@ mod_builder_ui <- function(id) {
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
+# -- Server ----------------------------------------------------------------
 mod_builder_server <- function(id, active_dataset, active_name,
                                 operation_stack, generated_code, history) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # ── Helper: columnas del dataset activo ───────────────────────────────
+    # -- Helper: columnas del dataset activo -------------------------------
     cols <- shiny::reactive({
       df <- active_dataset()
       if (is.null(df)) character(0) else names(df)
@@ -59,9 +59,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       else names(df)[sapply(df, is.numeric)]
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 1. SELECCIONAR COLUMNAS
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_select, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
@@ -80,9 +80,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 2. FILTRAR REGISTROS
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_filter, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
@@ -100,13 +100,13 @@ mod_builder_server <- function(id, active_dataset, active_name,
       col <- active_dataset()[[input$filter_col]]
       if (is.numeric(col)) {
         shiny::tagList(
-          shiny::selectInput(ns("filter_op"), "Condición:",
+          shiny::selectInput(ns("filter_op"), "Condici\u00f3n:",
             choices = c("==" , "!=", ">", "<", ">=", "<=")),
           shiny::numericInput(ns("filter_val"), "Valor:", value = 0)
         )
       } else {
         shiny::tagList(
-          shiny::selectInput(ns("filter_op"), "Condición:",
+          shiny::selectInput(ns("filter_op"), "Condici\u00f3n:",
             choices = c("igual a" = "==", "distinto de" = "!=")),
           shiny::selectInput(ns("filter_val"), "Valor:",
             choices = unique(na.omit(col)))
@@ -120,15 +120,15 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 3. ORDENAR
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_arrange, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
         title = "Ordenar",
         shiny::selectInput(ns("arrange_col"), "Ordenar por:", choices = cols()),
-        shiny::radioButtons(ns("arrange_dir"), "Dirección:",
+        shiny::radioButtons(ns("arrange_dir"), "Direcci\u00f3n:",
           choices = c("Ascendente" = "asc", "Descendente" = "desc"),
           inline  = TRUE),
         footer = shiny::tagList(
@@ -144,9 +144,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 4. AGRUPAR Y RESUMIR
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_group, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
@@ -154,16 +154,16 @@ mod_builder_server <- function(id, active_dataset, active_name,
         size  = "l",
         shiny::fluidRow(
           shiny::column(6,
-            shiny::tags$strong("1. Columnas de agrupación:"),
+            shiny::tags$strong("1. Columnas de agrupaci\u00f3n:"),
             shiny::checkboxGroupInput(ns("group_cols"), NULL,
               choices = cols())
           ),
           shiny::column(6,
             shiny::tags$strong("2. Calcular:"),
-            shiny::tags$p(shiny::tags$small("Podés agregar múltiples cálculos.", class = "text-muted")),
+            shiny::tags$p(shiny::tags$small("Pod\u00e9s agregar m\u00faltiples c\u00e1lculos.", class = "text-muted")),
             shiny::uiOutput(ns("group_summary_rows")),
             shiny::actionButton(ns("add_summary_row"), shiny::icon("plus"),
-                                label = " Agregar cálculo",
+                                label = " Agregar c\u00e1lculo",
                                 class = "btn-sm btn-outline-secondary mt-2")
           )
         ),
@@ -187,9 +187,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
         shiny::div(class = "d-flex gap-2 mb-2 align-items-end",
           shiny::textInput(ns(paste0("sum_newcol_", i)), if (i == 1) "Nombre resultado" else NULL,
                            placeholder = paste0("col_res_", i), width = "130px"),
-          shiny::selectInput(ns(paste0("sum_fn_", i)), if (i == 1) "Función" else NULL,
-            choices = c("Media" = "mean", "Suma" = "sum", "Mínimo" = "min",
-                        "Máximo" = "max", "Conteo" = "n", "Desvío" = "sd",
+          shiny::selectInput(ns(paste0("sum_fn_", i)), if (i == 1) "Funci\u00f3n" else NULL,
+            choices = c("Media" = "mean", "Suma" = "sum", "M\u00ednimo" = "min",
+                        "M\u00e1ximo" = "max", "Conteo" = "n", "Desv\u00edo" = "sd",
                         "Mediana" = "median"),
             width = "110px"),
           shiny::selectInput(ns(paste0("sum_col_", i)), if (i == 1) "Variable" else NULL,
@@ -222,16 +222,16 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 5. CREAR VARIABLE (mutate)
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_mutate, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
         title = "Crear nueva variable",
         shiny::textInput(ns("mutate_newcol"), "Nombre de la nueva variable:",
                          placeholder = "ej: precio_total"),
-        shiny::textAreaInput(ns("mutate_expr"), "Expresión R:",
+        shiny::textAreaInput(ns("mutate_expr"), "Expresi\u00f3n R:",
           placeholder = "ej: Precio * Cantidad\n    o: ifelse(Marca == 'X', 1, 0)",
           rows = 3),
         shiny::tags$small(class = "text-muted",
@@ -251,9 +251,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 6. RENOMBRAR COLUMNA
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_rename, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
@@ -274,9 +274,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 7. RECODIFICAR VALORES
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_recode, {
       shiny::req(active_dataset())
       shiny::showModal(shiny::modalDialog(
@@ -292,15 +292,15 @@ mod_builder_server <- function(id, active_dataset, active_name,
     output$recode_values_ui <- shiny::renderUI({
       shiny::req(input$recode_col, active_dataset())
       vals <- unique(na.omit(active_dataset()[[input$recode_col]]))
-      vals <- head(as.character(vals), 20)  # máx 20 valores
+      vals <- head(as.character(vals), 20)  # m\u00e1x 20 valores
       shiny::tagList(
         shiny::tags$p(shiny::tags$small(
-          glue::glue("{length(vals)} valores únicos (máx. 20 mostrados):"),
+          glue::glue("{length(vals)} valores \u00fanicos (m\u00e1x. 20 mostrados):"),
           class = "text-muted")),
         lapply(vals, function(v) {
           shiny::div(class = "d-flex gap-2 mb-1 align-items-center",
             shiny::tags$span(v, style = "width:150px; font-size:13px;"),
-            shiny::tags$span("→", style = "color:#888"),
+            shiny::tags$span("\u2192", style = "color:#888"),
             shiny::textInput(ns(paste0("recode_new_", make.names(v))),
                              label = NULL, value = v, width = "150px")
           )
@@ -326,9 +326,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 8. JOIN
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$op_join, {
       shiny::req(active_dataset())
       dfs_disponibles <- ls(envir = .GlobalEnv)[
@@ -358,22 +358,22 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::removeModal()
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # LIMPIAR STACK
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observeEvent(input$btn_clear_ops, {
       operation_stack(list())
       generated_code("")
       history_log(history, "stack_cleared", list())
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # RENDERIZAR STACK
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     output$operation_stack_ui <- shiny::renderUI({
       ops <- operation_stack()
       if (length(ops) == 0)
-        return(shiny::p("Aún no hay operaciones. Elegí una del panel izquierdo.",
+        return(shiny::p("A\u00fan no hay operaciones. Eleg\u00ed una del panel izquierdo.",
                         class = "text-muted"))
       shiny::tagList(lapply(seq_along(ops), function(i) {
         shiny::div(
@@ -396,9 +396,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       })
     })
 
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # VISTA PREVIA
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     preview_data <- shiny::reactive({
       df  <- active_dataset()
       ops <- operation_stack()
@@ -422,9 +422,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
       )
     })
 
-    # ════════════════════════════════════════════════════════════════════════
-    # GENERAR CÓDIGO
-    # ════════════════════════════════════════════════════════════════════════
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # GENERAR C\u00d3DIGO
+    # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     shiny::observe({
       df_name <- active_name()
       ops     <- operation_stack()
@@ -435,7 +435,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
   })
 }
 
-# ── Helper ────────────────────────────────────────────────────────────────
+# -- Helper ----------------------------------------------------------------
 push_operation <- function(operation_stack, history, op) {
   operation_stack(c(shiny::isolate(operation_stack()), list(op)))
   history_log(history, "operation_added", list(type = op$type, label = op$label))

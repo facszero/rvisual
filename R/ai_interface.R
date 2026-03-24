@@ -1,8 +1,8 @@
-#' Capa de Integración con IA
+#' Capa de Integraci\u00f3n con IA
 #'
 #' Usa curl directamente para mayor compatibilidad con proxies corporativos.
 
-# ── Interfaz común ────────────────────────────────────────────────────────
+# -- Interfaz com\u00fan --------------------------------------------------------
 
 #' @export
 ai_send <- function(cfg, system_prompt, user_prompt) {
@@ -21,7 +21,7 @@ ai_send <- function(cfg, system_prompt, user_prompt) {
 
 #' @export
 ai_test_connection <- function(cfg) {
-  # Primero verificar conectividad básica a internet
+  # Primero verificar conectividad b\u00e1sica a internet
   internet_ok <- tryCatch({
     con <- url("https://www.google.com", open = "r")
     close(con)
@@ -30,20 +30,20 @@ ai_test_connection <- function(cfg) {
 
   if (!internet_ok) {
     return(list(success = FALSE,
-                message = "Sin acceso a internet desde R. Verificá proxy o firewall."))
+                message = "Sin acceso a internet desde R. Verific\u00e1 proxy o firewall."))
   }
 
   tryCatch({
     res <- ai_send(cfg,
                    system_prompt = "Eres un asistente de prueba.",
-                   user_prompt   = "Respondé solo: OK")
+                   user_prompt   = "Respond\u00e9 solo: OK")
     list(success = TRUE, message = res$text)
   }, error = function(e) {
     list(success = FALSE, message = e$message)
   })
 }
 
-# ── Helper HTTP unificado ─────────────────────────────────────────────────
+# -- Helper HTTP unificado -------------------------------------------------
 
 http_post_json <- function(url, headers, body_list) {
   body_json <- jsonlite::toJSON(body_list, auto_unbox = TRUE)
@@ -65,7 +65,7 @@ http_post_json <- function(url, headers, body_list) {
       httr2::req_timeout(45) |>
       httr2::req_error(is_error = function(r) FALSE)
 
-    # Aplicar proxy si está configurado
+    # Aplicar proxy si est\u00e1 configurado
     if (nzchar(proxy)) {
       req <- httr2::req_options(req, proxy = proxy)
     }
@@ -73,7 +73,7 @@ http_post_json <- function(url, headers, body_list) {
     resp <- httr2::req_perform(req)
     httr2::resp_body_json(resp)
   }, error = function(e1) {
-    # Fallback: curl del sistema (respeta proxy del SO automáticamente)
+    # Fallback: curl del sistema (respeta proxy del SO autom\u00e1ticamente)
     if (nzchar(Sys.which("curl"))) {
       header_args <- paste(
         sapply(names(headers), function(h)
@@ -99,7 +99,7 @@ http_post_json <- function(url, headers, body_list) {
   result
 }
 
-# ── Proveedores ───────────────────────────────────────────────────────────
+# -- Proveedores -----------------------------------------------------------
 
 provider_anthropic <- function(cfg, system_prompt, user_prompt) {
   parsed <- http_post_json(
@@ -158,7 +158,7 @@ provider_gemini <- function(cfg, system_prompt, user_prompt) {
   parsed$candidates[[1]]$content$parts[[1]]$text
 }
 
-# ── Contexto y prompts ────────────────────────────────────────────────────
+# -- Contexto y prompts ----------------------------------------------------
 
 #' @export
 build_system_prompt <- function(ctx) {
@@ -168,7 +168,7 @@ build_system_prompt <- function(ctx) {
     paste0("MUESTRA DE DATOS (5 filas):\n", ctx$sample_text, "\n\n") else ""
 
   paste0(
-    "Sos un asistente de análisis de datos especializado en R y tidyverse.\n",
+    "Sos un asistente de an\u00e1lisis de datos especializado en R y tidyverse.\n",
     "Tu rol es ayudar a usuarios que vienen de SPSS a trabajar en R.\n\n",
     "DATASET ACTIVO: ", ctx$df_name, "\n",
     "Filas: ", ctx$nrow, " | Columnas: ", ctx$ncol, "\n\n",
@@ -176,12 +176,12 @@ build_system_prompt <- function(ctx) {
     sample_section,
     ops_section,
     "REGLAS:\n",
-    "1. Generá SOLO código R usando dplyr/tidyr/pipe nativo (|>).\n",
-    "2. No inventes columnas que no estén en la lista de variables.\n",
-    "3. SIEMPRE usá exactamente '", ctx$df_name, "' como nombre del dataset en el código. NUNCA uses otro nombre.\n",
-    "4. Si el pedido es ambiguo, preguntá antes de asumir.\n",
-    "5. Explicá brevemente qué hace el código.\n",
-    "6. Encerrá el código R en bloque ```r ... ```.\n",
+    "1. Gener\u00e1 SOLO c\u00f3digo R usando dplyr/tidyr/pipe nativo (|>).\n",
+    "2. No inventes columnas que no est\u00e9n en la lista de variables.\n",
+    "3. SIEMPRE us\u00e1 exactamente '", ctx$df_name, "' como nombre del dataset en el c\u00f3digo. NUNCA uses otro nombre.\n",
+    "4. Si el pedido es ambiguo, pregunt\u00e1 antes de asumir.\n",
+    "5. Explic\u00e1 brevemente qu\u00e9 hace el c\u00f3digo.\n",
+    "6. Encerr\u00e1 el c\u00f3digo R en bloque ```r ... ```.\n",
     "7. Si el usuario menciona sintaxis SPSS, traducila al equivalente en R."
   )
 }
@@ -212,10 +212,10 @@ build_ai_context <- function(df, df_name, ops, include_rows = FALSE) {
   )
 }
 
-# ── Extracción de código ──────────────────────────────────────────────────
+# -- Extracci\u00f3n de c\u00f3digo --------------------------------------------------
 
 extract_r_code_block <- function(text) {
-  # (?s) = DOTALL: el punto captura también saltos de línea
+  # (?s) = DOTALL: el punto captura tambi\u00e9n saltos de l\u00ednea
   pattern <- "(?s)```(?:r|R)?[ \t]*\n?(.*?)```"
   matches <- regmatches(text, regexpr(pattern, text, perl = TRUE))
   if (length(matches) == 0 || nchar(matches) == 0) return(NULL)
@@ -223,5 +223,5 @@ extract_r_code_block <- function(text) {
   trimws(code)
 }
 
-# ── null-coalesce ─────────────────────────────────────────────────────────
+# -- null-coalesce ---------------------------------------------------------
 `%||%` <- function(a, b) if (!is.null(a) && nchar(as.character(a)) > 0) a else b

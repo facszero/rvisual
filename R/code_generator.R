@@ -1,19 +1,19 @@
-#' Generador de Código R
+#' Generador de C\u00f3digo R
 #'
-#' Convierte un stack de operaciones en código R limpio usando tidyverse.
+#' Convierte un stack de operaciones en c\u00f3digo R limpio usando tidyverse.
 #' Usa el pipe nativo \code{|>} disponible desde R 4.1.
 #'
 #' @name code_generator
 #' @keywords internal
 NULL
 
-#' Generar código R desde un stack de operaciones
+#' Generar c\u00f3digo R desde un stack de operaciones
 #'
 #' @param df_name Nombre del objeto R que contiene el dataset.
 #' @param ops Lista de operaciones generadas por las funciones \code{op_*}.
 #' @param assign_to Si no es \code{NULL}, el resultado se asigna a este
 #'   nombre de variable.
-#' @return String con código R formateado y listo para ejecutar.
+#' @return String con c\u00f3digo R formateado y listo para ejecutar.
 #' @keywords internal
 generate_code <- function(df_name, ops, assign_to = NULL) {
   if (length(ops) == 0)
@@ -26,7 +26,7 @@ generate_code <- function(df_name, ops, assign_to = NULL) {
     glue::glue("{assign_to} <- {pipe_body}") else pipe_body
 
   header <- paste0(
-    "# Código generado por RVisual\n",
+    "# C\u00f3digo generado por RVisual\n",
     "# Dataset: ", df_name, "\n",
     "# Operaciones: ", length(ops), "\n",
     "# Generado: ", format(Sys.time(), "%Y-%m-%d %H:%M"), "\n\n"
@@ -44,7 +44,7 @@ op_to_code_line <- function(op) {
     "rename"          = code_rename(op$params),
     "recode"          = code_recode(op$params),
     "join"            = code_join(op$params),
-    paste0("# operación desconocida: ", op$type)
+    paste0("# operaci\u00f3n desconocida: ", op$type)
   )
 }
 

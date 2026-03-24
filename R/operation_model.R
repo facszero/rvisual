@@ -1,23 +1,23 @@
 #' Motor de Operaciones Visuales
 #'
-#' Define la representación estructurada intermedia de las operaciones
+#' Define la representaci\u00f3n estructurada intermedia de las operaciones
 #' que el usuario construye visualmente en el Constructor.
 #'
-#' Cada operación es una lista R con campos tipados:
+#' Cada operaci\u00f3n es una lista R con campos tipados:
 #' \describe{
 #'   \item{type}{Tipo: select, filter, arrange, group_summarise, mutate, rename, recode, join}
-#'   \item{label}{Descripción legible para mostrar en la UI}
-#'   \item{params}{Lista nombrada con parámetros específicos del tipo}
-#'   \item{created_at}{Timestamp de creación}
+#'   \item{label}{Descripci\u00f3n legible para mostrar en la UI}
+#'   \item{params}{Lista nombrada con par\u00e1metros espec\u00edficos del tipo}
+#'   \item{created_at}{Timestamp de creaci\u00f3n}
 #' }
 #'
 #' @name operation_model
 #' @keywords internal
 NULL
 
-#' Crear operación: seleccionar columnas
+#' Crear operaci\u00f3n: seleccionar columnas
 #' @param cols Character vector con los nombres de columnas a conservar.
-#' @return Lista de operación con type="select".
+#' @return Lista de operaci\u00f3n con type="select".
 #' @examples
 #' op <- op_select(c("nombre", "edad", "ingreso"))
 #' @keywords internal
@@ -29,11 +29,11 @@ op_select <- function(cols) {
        created_at = Sys.time())
 }
 
-#' Crear operación: filtrar registros
+#' Crear operaci\u00f3n: filtrar registros
 #' @param col Nombre de la columna a filtrar.
-#' @param op Operador de comparación: "==", "!=", ">", "<", ">=", "<=".
-#' @param value Valor de comparación.
-#' @return Lista de operación con type="filter".
+#' @param op Operador de comparaci\u00f3n: "==", "!=", ">", "<", ">=", "<=".
+#' @param value Valor de comparaci\u00f3n.
+#' @return Lista de operaci\u00f3n con type="filter".
 #' @examples
 #' op <- op_filter("anio", "==", 2024)
 #' @keywords internal
@@ -45,10 +45,10 @@ op_filter <- function(col, op, value) {
        created_at = Sys.time())
 }
 
-#' Crear operación: ordenar
+#' Crear operaci\u00f3n: ordenar
 #' @param col Nombre de la columna por la que ordenar.
-#' @param desc Lógico. Si \code{TRUE} ordena de forma descendente.
-#' @return Lista de operación con type="arrange".
+#' @param desc L\u00f3gico. Si \code{TRUE} ordena de forma descendente.
+#' @return Lista de operaci\u00f3n con type="arrange".
 #' @keywords internal
 op_arrange <- function(col, desc = FALSE) {
   list(type = "arrange",
@@ -57,11 +57,11 @@ op_arrange <- function(col, desc = FALSE) {
        created_at = Sys.time())
 }
 
-#' Crear operación: agrupar y resumir
-#' @param group_cols Character vector de columnas de agrupación.
+#' Crear operaci\u00f3n: agrupar y resumir
+#' @param group_cols Character vector de columnas de agrupaci\u00f3n.
 #' @param summary_fns Lista nombrada donde cada elemento define una
-#'   función de resumen: \code{list(fn, col, na_rm)}.
-#' @return Lista de operación con type="group_summarise".
+#'   funci\u00f3n de resumen: \code{list(fn, col, na_rm)}.
+#' @return Lista de operaci\u00f3n con type="group_summarise".
 #' @keywords internal
 op_group_summarise <- function(group_cols, summary_fns) {
   list(type = "group_summarise",
@@ -70,10 +70,10 @@ op_group_summarise <- function(group_cols, summary_fns) {
        created_at = Sys.time())
 }
 
-#' Crear operación: nueva variable (mutate)
+#' Crear operaci\u00f3n: nueva variable (mutate)
 #' @param new_col Nombre de la nueva columna.
-#' @param expression Expresión R como string (ej: "Precio * Cantidad").
-#' @return Lista de operación con type="mutate".
+#' @param expression Expresi\u00f3n R como string (ej: "Precio * Cantidad").
+#' @return Lista de operaci\u00f3n con type="mutate".
 #' @keywords internal
 op_mutate <- function(new_col, expression) {
   list(type = "mutate",
@@ -82,10 +82,10 @@ op_mutate <- function(new_col, expression) {
        created_at = Sys.time())
 }
 
-#' Crear operación: renombrar columna
+#' Crear operaci\u00f3n: renombrar columna
 #' @param old_name Nombre actual de la columna.
 #' @param new_name Nuevo nombre.
-#' @return Lista de operación con type="rename".
+#' @return Lista de operaci\u00f3n con type="rename".
 #' @keywords internal
 op_rename <- function(old_name, new_name) {
   list(type = "rename",
@@ -94,11 +94,11 @@ op_rename <- function(old_name, new_name) {
        created_at = Sys.time())
 }
 
-#' Crear operación: recodificar valores
+#' Crear operaci\u00f3n: recodificar valores
 #' @param col Nombre de la columna a recodificar.
 #' @param mapping Lista nombrada con los reemplazos:
 #'   \code{list(valor_original = valor_nuevo)}.
-#' @return Lista de operación con type="recode".
+#' @return Lista de operaci\u00f3n con type="recode".
 #' @keywords internal
 op_recode <- function(col, mapping) {
   list(type = "recode",
@@ -107,12 +107,12 @@ op_recode <- function(col, mapping) {
        created_at = Sys.time())
 }
 
-#' Crear operación: unir tablas
+#' Crear operaci\u00f3n: unir tablas
 #' @param right_df_name Nombre del segundo data.frame (debe existir en
 #'   \code{.GlobalEnv}).
 #' @param by_cols Character vector con las columnas clave del join.
 #' @param join_type Tipo de join: "left", "right", "inner", "full".
-#' @return Lista de operación con type="join".
+#' @return Lista de operaci\u00f3n con type="join".
 #' @keywords internal
 op_join <- function(right_df_name, by_cols, join_type = "left") {
   list(type = "join",
@@ -174,7 +174,7 @@ apply_single_operation <- function(df, op) {
       df
     },
     "rename"  = dplyr::rename(df, !!op$params$new_name := !!op$params$old_name),
-    "recode"  = df,  # aplicado vía code_generator
+    "recode"  = df,  # aplicado v\u00eda code_generator
     "join" = {
       right_df <- get(op$params$right_df, envir = .GlobalEnv)
       join_fn  <- switch(op$params$type,

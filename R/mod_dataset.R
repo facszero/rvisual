@@ -1,7 +1,7 @@
-# mod_dataset.R — Panel de gestión de datasets
-# RVisual — Addin RStudio para usuarios de SPSS
+# mod_dataset.R - Panel de gesti\u00f3n de datasets
+# RVisual - Addin RStudio para usuarios de SPSS
 
-# ── UI ────────────────────────────────────────────────────────────────────────
+# -- UI ------------------------------------------------------------------------
 
 mod_dataset_ui <- function(id) {
   ns <- shiny::NS(id)
@@ -16,7 +16,7 @@ mod_dataset_ui <- function(id) {
     "))),
 
     shiny::fluidRow(
-      # ── Columna izquierda: Carga de archivos ──────────────────────────────
+      # -- Columna izquierda: Carga de archivos ------------------------------
       shiny::column(5,
         shiny::div(id = ns("panel_carga"),
           shiny::h5(shiny::icon("folder-open"), " Cargar archivo", style = "margin-top:0"),
@@ -59,7 +59,7 @@ mod_dataset_ui <- function(id) {
                             style  = "margin-top:6px")
       ),
 
-      # ── Columna derecha: Datasets cargados ────────────────────────────────
+      # -- Columna derecha: Datasets cargados --------------------------------
       shiny::column(7,
         shiny::h5(shiny::icon("table"), " Datasets activos"),
         shiny::div(style = "min-height: 100px;",
@@ -67,7 +67,7 @@ mod_dataset_ui <- function(id) {
         ),
         shiny::hr(),
         shiny::uiOutput(ns("info_dataset")),
-        # ── Exportar dataset activo ────────────────────────────────────────
+        # -- Exportar dataset activo ----------------------------------------
         shiny::uiOutput(ns("export_panel"))
       )
     )
@@ -75,11 +75,11 @@ mod_dataset_ui <- function(id) {
 }
 
 
-# ── Server ────────────────────────────────────────────────────────────────────
+# -- Server --------------------------------------------------------------------
 # Firma alineada con server.R:
-#   active_dataset  — reactiveVal(NULL)  para el data.frame activo
-#   active_name     — reactiveVal(NULL)  para el nombre del dataset activo
-#   history         — reactiveVal(list())para el historial de sesión
+#   active_dataset  - reactiveVal(NULL)  para el data.frame activo
+#   active_name     - reactiveVal(NULL)  para el nombre del dataset activo
+#   history         - reactiveVal(list())para el historial de sesi\u00f3n
 
 mod_dataset_server <- function(id, active_dataset, active_name, history) {
   shiny::moduleServer(id, function(input, output, session) {
@@ -92,17 +92,17 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       msg_carga    = ""       # mensaje de resultado de carga
     )
 
-    # ── Mensaje de carga (renderText estático que lee rv$msg_carga) ───────────
+    # -- Mensaje de carga (renderText est\u00e1tico que lee rv$msg_carga) -----------
     output$msg_carga <- shiny::renderText({ rv$msg_carga })
 
-    # ── ¿Es CSV? ─────────────────────────────────────────────────────────────
+    # -- \u00bfEs CSV? -------------------------------------------------------------
     output$es_csv <- shiny::reactive({
       shiny::req(input$archivo)
       tolower(tools::file_ext(input$archivo$name)) == "csv"
     })
     shiny::outputOptions(output, "es_csv", suspendWhenHidden = FALSE)
 
-    # ── Cargar archivo ────────────────────────────────────────────────────────
+    # -- Cargar archivo --------------------------------------------------------
     shiny::observeEvent(input$btn_cargar, {
       shiny::req(input$archivo)
 
@@ -135,7 +135,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         rv$seleccionado       <- nombre
         active_dataset(df)
         active_name(nombre)
-        # Exportar al entorno global para que el código R generado funcione directamente
+        # Exportar al entorno global para que el c\u00f3digo R generado funcione directamente
         assign(nombre, df, envir = .GlobalEnv)
         history_log(history, "dataset_loaded",
                     list(name = nombre, nrow = nrow(df), ncol = ncol(df)))
@@ -146,12 +146,12 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       }
     })
 
-    # ── Data.frames del entorno global ────────────────────────────────────────
+    # -- Data.frames del entorno global ----------------------------------------
     dfs_entorno <- shiny::reactive({
       input$btn_refresh
       objs <- ls(envir = .GlobalEnv)
       if (length(objs) == 0) return(character(0))
-      # vapply garantiza vector lógico; tryCatch evita error en objetos no accesibles
+      # vapply garantiza vector l\u00f3gico; tryCatch evita error en objetos no accesibles
       es_df <- vapply(objs, function(x) {
         tryCatch(is.data.frame(get(x, envir = .GlobalEnv, inherits = FALSE)),
                  error = function(e) FALSE)
@@ -188,7 +188,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       })
     })
 
-    # ── Lista de datasets cargados ────────────────────────────────────────────
+    # -- Lista de datasets cargados --------------------------------------------
     output$lista_datasets <- shiny::renderUI({
       if (length(rv$datasets) == 0)
         return(shiny::div(class = "ds-hint",
@@ -248,7 +248,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       })
     })
 
-    # ── Info del dataset seleccionado ─────────────────────────────────────────
+    # -- Info del dataset seleccionado -----------------------------------------
     output$info_dataset <- shiny::renderUI({
       nm <- rv$seleccionado
       shiny::req(nm)
@@ -279,7 +279,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       )
     })
 
-    # ── Panel de exportación ──────────────────────────────────────────────
+    # -- Panel de exportaci\u00f3n ----------------------------------------------
     output$export_panel <- shiny::renderUI({
       shiny::req(rv$seleccionado)
       shiny::tagList(
@@ -315,7 +315,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         if (!requireNamespace("writexl", quietly = TRUE)) {
           write.csv(rv$datasets[[rv$seleccionado]], file, row.names = FALSE)
           shiny::showNotification(
-            "writexl no instalado. Se guardó como CSV. Instalalo con: install.packages('writexl')",
+            "writexl no instalado. Se guard\u00f3 como CSV. Instalalo con: install.packages('writexl')",
             type = "warning", duration = 8)
         } else {
           writexl::write_xlsx(rv$datasets[[rv$seleccionado]], file)

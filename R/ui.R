@@ -22,44 +22,44 @@ rvisual_ui <- function() {
     ),
     window_title = "RVisual",
 
-    # ── Panel 1: Dataset ──────────────────────────────────────────────────
+    # -- Panel 1: Dataset --------------------------------------------------
     bslib::nav_panel(
       title = shiny::tags$span(shiny::icon("database"), " Dataset"),
       value = "panel_dataset",
       mod_dataset_ui("dataset")
     ),
 
-    # ── Panel 2: Explorador ───────────────────────────────────────────────
+    # -- Panel 2: Explorador -----------------------------------------------
     bslib::nav_panel(
       title = shiny::tags$span(shiny::icon("table"), " Explorador"),
       value = "panel_explorer",
       mod_explorer_ui("explorer")
     ),
 
-    # ── Panel 3: Constructor Visual ───────────────────────────────────────
+    # -- Panel 3: Constructor Visual ---------------------------------------
     bslib::nav_panel(
       title = shiny::tags$span(shiny::icon("sliders"), " Constructor"),
       value = "panel_builder",
       mod_builder_ui("builder")
     ),
 
-    # ── Panel 4: Código R ─────────────────────────────────────────────────
+    # -- Panel 4: C\u00f3digo R -------------------------------------------------
     bslib::nav_panel(
-      title = shiny::tags$span(shiny::icon("code"), " Código R"),
+      title = shiny::tags$span(shiny::icon("code"), " C\u00f3digo R"),
       value = "panel_code",
       mod_code_ui("code")
     ),
 
-    # ── Panel 5: Asistente IA ─────────────────────────────────────────────
+    # -- Panel 5: Asistente IA ---------------------------------------------
     bslib::nav_panel(
       title = shiny::tags$span(shiny::icon("robot"), " Asistente IA"),
       value = "panel_ai",
       mod_ai_ui("ai")
     ),
 
-    # ── Panel 6: Configuración ────────────────────────────────────────────
+    # -- Panel 6: Configuraci\u00f3n --------------------------------------------
     bslib::nav_panel(
-      title = shiny::tags$span(shiny::icon("gear"), " Configuración"),
+      title = shiny::tags$span(shiny::icon("gear"), " Configuraci\u00f3n"),
       value = "panel_config",
       mod_config_ui("config")
     ),

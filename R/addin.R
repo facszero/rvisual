@@ -4,17 +4,17 @@
 #' o en el browser del sistema.
 #'
 #' RVisual es un addin para RStudio que permite a usuarios con experiencia
-#' en SPSS trabajar con datos en R sin necesidad de escribir código
-#' manualmente. Toda acción visual genera código R limpio y reproducible
+#' en SPSS trabajar con datos en R sin necesidad de escribir c\u00f3digo
+#' manualmente. Toda acci\u00f3n visual genera c\u00f3digo R limpio y reproducible
 #' usando tidyverse.
 #'
-#' @param browser Lógico. Si \code{TRUE} abre en el browser del sistema
+#' @param browser L\u00f3gico. Si \code{TRUE} abre en el browser del sistema
 #'   en lugar del panel Viewer de RStudio. Recomendado cuando se usa el
 #'   Asistente IA, ya que el panel embebido bloquea conexiones HTTP
 #'   salientes. Default \code{FALSE}.
 #'
-#' @return Invisiblemente \code{NULL}. La función bloquea la sesión R
-#'   mientras la interfaz está abierta (comportamiento normal de gadgets
+#' @return Invisiblemente \code{NULL}. La funci\u00f3n bloquea la sesi\u00f3n R
+#'   mientras la interfaz est\u00e1 abierta (comportamiento normal de gadgets
 #'   Shiny).
 #'
 #' @examples
@@ -31,7 +31,7 @@
 #' @importFrom rstudioapi isAvailable
 launch_rvisual <- function(browser = FALSE) {
 
-  # Subir límite de upload a 50 MB
+  # Subir l\u00edmite de upload a 50 MB
   options(shiny.maxRequestSize = 50 * 1024^2)
 
   ui     <- rvisual_ui()

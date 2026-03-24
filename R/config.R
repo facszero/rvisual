@@ -1,9 +1,9 @@
-#' Configuración persistente y historial de sesión
+#' Configuraci\u00f3n persistente y historial de sesi\u00f3n
 #'
-#' Funciones para guardar/cargar configuración del usuario (proveedor IA,
-#' API keys, preferencias) y registrar eventos durante la sesión.
+#' Funciones para guardar/cargar configuraci\u00f3n del usuario (proveedor IA,
+#' API keys, preferencias) y registrar eventos durante la sesi\u00f3n.
 #'
-#' La configuración se guarda en un archivo JSON en el directorio de datos
+#' La configuraci\u00f3n se guarda en un archivo JSON en el directorio de datos
 #' del usuario (ver \code{\link[tools]{R_user_dir}}).
 #'
 #' @name config
@@ -16,8 +16,8 @@ config_path <- function() {
   file.path(dir, "config.json")
 }
 
-#' Guardar configuración del usuario
-#' @param cfg Lista con los campos de configuración.
+#' Guardar configuraci\u00f3n del usuario
+#' @param cfg Lista con los campos de configuraci\u00f3n.
 #' @return Invisiblemente \code{cfg}.
 #' @keywords internal
 config_save <- function(cfg) {
@@ -25,8 +25,8 @@ config_save <- function(cfg) {
   invisible(cfg)
 }
 
-#' Cargar configuración guardada
-#' @return Lista de configuración, o lista vacía si no existe.
+#' Cargar configuraci\u00f3n guardada
+#' @return Lista de configuraci\u00f3n, o lista vac\u00eda si no existe.
 #' @keywords internal
 config_load <- function() {
   path <- config_path()
@@ -35,7 +35,7 @@ config_load <- function() {
            error = function(e) list())
 }
 
-#' Registrar un evento en el historial de sesión
+#' Registrar un evento en el historial de sesi\u00f3n
 #'
 #' @param history \code{reactiveVal} que contiene la lista de eventos.
 #' @param type String identificador del tipo de evento.

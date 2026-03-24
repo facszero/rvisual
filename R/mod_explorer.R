@@ -1,13 +1,13 @@
-#' Módulo: Explorador de datos
+#' M\u00f3dulo: Explorador de datos
 #'
 #' Vista tabular interactiva del dataset activo.
 #' Incluye:
 #' - Tabla paginada con DT
 #' - Resumen de columnas con tipos detectados
-#' - Estadísticas rápidas por variable
-#' - Búsqueda de variables
+#' - Estad\u00edsticas r\u00e1pidas por variable
+#' - B\u00fasqueda de variables
 
-# ── UI ────────────────────────────────────────────────────────────────────
+# -- UI --------------------------------------------------------------------
 mod_explorer_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -24,23 +24,23 @@ mod_explorer_ui <- function(id) {
       shiny::textInput(ns("col_search"), "Buscar variable", placeholder = "Nombre..."),
       DT::DTOutput(ns("columns_table"))
     ),
-    # Tab 3: Estadísticas rápidas
+    # Tab 3: Estad\u00edsticas r\u00e1pidas
     bslib::nav_panel(
-      "Estadísticas",
+      "Estad\u00edsticas",
       shiny::selectInput(ns("sel_col_stats"), "Seleccionar variable", choices = NULL),
       shiny::uiOutput(ns("col_stats"))
     )
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
+# -- Server ----------------------------------------------------------------
 mod_explorer_server <- function(id, active_dataset, active_name) {
   shiny::moduleServer(id, function(input, output, session) {
 
     output$no_data_msg <- shiny::renderUI({
       if (is.null(active_dataset())) {
         shiny::div(class = "alert alert-info mt-3",
-                   "Cargá o seleccioná un dataset en el panel 'Dataset'.")
+                   "Carg\u00e1 o seleccion\u00e1 un dataset en el panel 'Dataset'.")
       }
     })
 
@@ -66,7 +66,7 @@ mod_explorer_server <- function(id, active_dataset, active_name) {
       meta <- get_metadata(df, active_name())
       cols_df <- meta$columns
 
-      # Filtro de búsqueda
+      # Filtro de b\u00fasqueda
       if (nchar(trimws(input$col_search)) > 0) {
         cols_df <- cols_df[grepl(input$col_search, cols_df$name, ignore.case = TRUE), ]
       }
@@ -75,18 +75,18 @@ mod_explorer_server <- function(id, active_dataset, active_name) {
         cols_df,
         options  = list(pageLength = 30, dom = "tp"),
         rownames = FALSE,
-        colnames = c("Variable", "Tipo R", "Tipo Visual", "Únicos", "NA%", "Ejemplo")
+        colnames = c("Variable", "Tipo R", "Tipo Visual", "\u00danicos", "NA%", "Ejemplo")
       )
     })
 
-    # Actualizar selector de variables para estadísticas
+    # Actualizar selector de variables para estad\u00edsticas
     shiny::observe({
       shiny::req(active_dataset())
       shiny::updateSelectInput(session, "sel_col_stats",
                                choices = names(active_dataset()))
     })
 
-    # Estadísticas de columna seleccionada
+    # Estad\u00edsticas de columna seleccionada
     output$col_stats <- shiny::renderUI({
       shiny::req(active_dataset(), input$sel_col_stats)
       col_name <- input$sel_col_stats
@@ -98,7 +98,7 @@ mod_explorer_server <- function(id, active_dataset, active_name) {
   })
 }
 
-# ── Helpers ───────────────────────────────────────────────────────────────
+# -- Helpers ---------------------------------------------------------------
 
 render_col_stats_ui <- function(col_vector, col_name) {
   # TODO: expandir con visualizaciones (histograma, barras de frecuencia, etc.)
@@ -109,10 +109,10 @@ render_col_stats_ui <- function(col_vector, col_name) {
     shiny::tagList(
       shiny::tags$h6(col_name, class = "mt-3"),
       shiny::tags$ul(class = "list-group list-group-flush",
-        shiny::tags$li(class = "list-group-item", glue::glue("Mínimo: {stats['Min.']}")),
+        shiny::tags$li(class = "list-group-item", glue::glue("M\u00ednimo: {stats['Min.']}")),
         shiny::tags$li(class = "list-group-item", glue::glue("Mediana: {stats['Median']}")),
         shiny::tags$li(class = "list-group-item", glue::glue("Media: {round(stats['Mean'], 4)}")),
-        shiny::tags$li(class = "list-group-item", glue::glue("Máximo: {stats['Max.']}")),
+        shiny::tags$li(class = "list-group-item", glue::glue("M\u00e1ximo: {stats['Max.']}")),
         shiny::tags$li(class = "list-group-item",
                        glue::glue("Valores NA: {sum(is.na(col_vector))}"))
       )
@@ -122,7 +122,7 @@ render_col_stats_ui <- function(col_vector, col_name) {
     top_n <- head(freqs, 10)
     shiny::tagList(
       shiny::tags$h6(col_name, class = "mt-3"),
-      shiny::tags$p(glue::glue("Categorías únicas: {length(freqs)}")),
+      shiny::tags$p(glue::glue("Categor\u00edas \u00fanicas: {length(freqs)}")),
       DT::renderDT(
         as.data.frame(top_n),
         options  = list(pageLength = 10, dom = "t"),

@@ -1,4 +1,4 @@
-#' Módulo: Asistente IA Contextual
+#' M\u00f3dulo: Asistente IA Contextual
 #'
 #' Panel de chat con agente IA multi-proveedor.
 #' El agente conoce:
@@ -7,9 +7,9 @@
 #'   - El stack de operaciones actual
 #'   - Opcionalmente, una muestra limitada de datos
 #'
-#' Modalidad segura: el agente propone código y el usuario decide si ejecutarlo.
+#' Modalidad segura: el agente propone c\u00f3digo y el usuario decide si ejecutarlo.
 
-# ── UI ────────────────────────────────────────────────────────────────────
+# -- UI --------------------------------------------------------------------
 mod_ai_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -29,7 +29,7 @@ mod_ai_ui <- function(id) {
           class = "d-flex gap-2",
           shiny::textAreaInput(
             ns("user_prompt"), NULL,
-            placeholder = "Ej: filtrá año == 2025, agrupá por región y calculá promedio de ingreso",
+            placeholder = "Ej: filtr\u00e1 a\u00f1o == 2025, agrup\u00e1 por regi\u00f3n y calcul\u00e1 promedio de ingreso",
             rows = 2
           ),
           shiny::div(
@@ -51,19 +51,19 @@ mod_ai_ui <- function(id) {
       shiny::checkboxInput(ns("include_sample"), "Incluir muestra de datos (5 filas)", value = FALSE),
       bslib::tooltip(
         shiny::icon("triangle-exclamation", class = "text-warning"),
-        "Activar solo con datos no sensibles. Las filas se enviarán al proveedor IA externo."
+        "Activar solo con datos no sensibles. Las filas se enviar\u00e1n al proveedor IA externo."
       ),
       shiny::hr(),
       shiny::uiOutput(ns("provider_badge")),
       shiny::hr(),
-      shiny::actionButton(ns("btn_test_conn"), "Probar conexión",
+      shiny::actionButton(ns("btn_test_conn"), "Probar conexi\u00f3n",
                           icon = shiny::icon("plug"), class = "btn-sm btn-outline-secondary w-100"),
       shiny::uiOutput(ns("conn_status"))
     )
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
+# -- Server ----------------------------------------------------------------
 mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
                            generated_code, ai_config, history, parent_session) {
   shiny::moduleServer(id, function(input, output, session) {
@@ -82,7 +82,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
         shiny::tags$strong(active_name()),
         shiny::tags$br(),
         shiny::tags$small(
-          glue::glue("{nrow(df)} filas × {ncol(df)} columnas"),
+          glue::glue("{nrow(df)} filas \u00d7 {ncol(df)} columnas"),
           class = "text-muted"
         ),
         shiny::tags$br(),
@@ -99,7 +99,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       cfg <- ai_config()
       if (is.null(cfg) || is.null(cfg$provider)) {
         return(shiny::div(class = "alert alert-warning small p-2",
-                          "Configurá un proveedor IA en la pestaña Configuración."))
+                          "Configur\u00e1 un proveedor IA en la pesta\u00f1a Configuraci\u00f3n."))
       }
       shiny::div(class = "badge bg-secondary",
                  glue::glue("{cfg$provider} / {cfg$model}"))
@@ -110,7 +110,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       msgs <- chat_history()
       if (length(msgs) == 0) {
         return(shiny::p(
-          "Describí en lenguaje natural lo que querés hacer con tus datos.",
+          "Describ\u00ed en lenguaje natural lo que quer\u00e9s hacer con tus datos.",
           class = "text-muted"
         ))
       }
@@ -124,7 +124,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
 
       cfg <- ai_config()
       if (is.null(cfg) || is.null(cfg$provider)) {
-        shiny::showNotification("Configurá un proveedor IA primero.", type = "warning")
+        shiny::showNotification("Configur\u00e1 un proveedor IA primero.", type = "warning")
         return()
       }
 
@@ -175,13 +175,13 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       chat_history(list())
     })
 
-    # Probar conexión
+    # Probar conexi\u00f3n
     shiny::observeEvent(input$btn_test_conn, {
       cfg <- ai_config()
       if (is.null(cfg) || is.null(cfg$provider)) {
         output$conn_status <- shiny::renderUI(
           shiny::div(class = "alert alert-warning small p-2 mt-2",
-                     "Configurá un proveedor en la pestaña Configuración."))
+                     "Configur\u00e1 un proveedor en la pesta\u00f1a Configuraci\u00f3n."))
         return()
       }
       output$conn_status <- shiny::renderUI(
@@ -193,7 +193,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       output$conn_status <- shiny::renderUI({
         if (result$success) {
           shiny::div(class = "alert alert-success small p-2 mt-2",
-                     shiny::icon("check"), " Conexión OK")
+                     shiny::icon("check"), " Conexi\u00f3n OK")
         } else {
           shiny::div(class = "alert alert-danger small p-2 mt-2",
                      shiny::icon("triangle-exclamation"), " ",
@@ -202,7 +202,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       })
     })
 
-    # ── Enviar código al panel Código R ──────────────────────────────────────
+    # -- Enviar c\u00f3digo al panel C\u00f3digo R --------------------------------------
     shiny::observe({
       msgs <- chat_history()
       lapply(seq_along(msgs), function(i) {
@@ -211,10 +211,10 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
           btn_id <- paste0("send_to_code_", msg$code_id)
           shiny::observeEvent(input[[btn_id]], {
             generated_code(msg$code)
-            # Navegar a la pestaña Código R
+            # Navegar a la pesta\u00f1a C\u00f3digo R
             bslib::nav_select("main_nav", "panel_code", session = parent_session)
             shiny::showNotification(
-              "\u2192 Código enviado a la pestaña Código R",
+              "\u2192 C\u00f3digo enviado a la pesta\u00f1a C\u00f3digo R",
               type = "message", duration = 3
             )
             history_log(history, "ai_code_sent_to_panel", list(code_id = msg$code_id))
@@ -223,7 +223,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       })
     })
 
-    # ── Ejecutar código directo desde el chat ────────────────────────────────
+    # -- Ejecutar c\u00f3digo directo desde el chat --------------------------------
     shiny::observe({
       msgs <- chat_history()
       lapply(seq_along(msgs), function(i) {
@@ -239,7 +239,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
             }, error = function(e) {
               paste("Error:", e$message)
             })
-            # Mostrar resultado como notificación + append al chat
+            # Mostrar resultado como notificaci\u00f3n + append al chat
             if (length(output_lines) > 0 && !grepl("^Error:", output_lines[1])) {
               shiny::showNotification("Ejecutado correctamente.", type = "message")
               # Agregar resultado al chat como mensaje especial
@@ -258,7 +258,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
   })
 }
 
-# ── Helpers ───────────────────────────────────────────────────────────────
+# -- Helpers ---------------------------------------------------------------
 
 append_message <- function(chat_history, role, content, code = NULL) {
   msg <- list(

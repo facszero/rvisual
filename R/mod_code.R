@@ -1,17 +1,17 @@
-#' Módulo: Panel de Código R Generado
+#' M\u00f3dulo: Panel de C\u00f3digo R Generado
 #'
-#' Muestra el código R producido por el Constructor en tiempo real.
+#' Muestra el c\u00f3digo R producido por el Constructor en tiempo real.
 #' Permite copiar, insertar en script activo, ejecutar, y guardar como .R.
 
-# ── UI ────────────────────────────────────────────────────────────────────
+# -- UI --------------------------------------------------------------------
 mod_code_ui <- function(id) {
   ns <- shiny::NS(id)
 
   bslib::card(
     bslib::card_header(
-      shiny::icon("code"), " Código R generado",
+      shiny::icon("code"), " C\u00f3digo R generado",
       bslib::tooltip(shiny::icon("circle-info"),
-        "Código generado por tus acciones visuales. Podés copiarlo, ejecutarlo o guardarlo.")
+        "C\u00f3digo generado por tus acciones visuales. Pod\u00e9s copiarlo, ejecutarlo o guardarlo.")
     ),
     shiny::div(
       class = "d-flex gap-2 mb-3 flex-wrap",
@@ -36,47 +36,47 @@ mod_code_ui <- function(id) {
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
+# -- Server ----------------------------------------------------------------
 mod_code_server <- function(id, generated_code, active_dataset, active_name) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # ── Mostrar código ────────────────────────────────────────────────────
+    # -- Mostrar c\u00f3digo ----------------------------------------------------
     output$code_text <- shiny::renderText({
       code <- generated_code()
       if (is.null(code) || nchar(trimws(code)) == 0)
-        "# El código R aparecerá aquí cuando construyas operaciones en el Constructor."
+        "# El c\u00f3digo R aparecer\u00e1 aqu\u00ed cuando construyas operaciones en el Constructor."
       else code
     })
 
-    # ── Copiar al portapapeles ────────────────────────────────────────────
+    # -- Copiar al portapapeles --------------------------------------------
     shiny::observeEvent(input$btn_copy, {
       shiny::req(generated_code())
       session$sendCustomMessage("rvisual_copy_to_clipboard", generated_code())
-      shiny::showNotification("Código copiado al portapapeles.", type = "message", duration = 2)
+      shiny::showNotification("C\u00f3digo copiado al portapapeles.", type = "message", duration = 2)
     })
 
-    # ── Insertar en script activo de RStudio ──────────────────────────────
+    # -- Insertar en script activo de RStudio ------------------------------
     shiny::observeEvent(input$btn_insert, {
       shiny::req(generated_code())
       tryCatch({
         rstudio_insert_code(generated_code())
-        shiny::showNotification("Código insertado en el script activo.", type = "message")
+        shiny::showNotification("C\u00f3digo insertado en el script activo.", type = "message")
       }, error = function(e) {
         shiny::showNotification(
-          paste("No se pudo insertar (¿hay un script abierto?):", e$message),
+          paste("No se pudo insertar (\u00bfhay un script abierto?):", e$message),
           type = "warning")
       })
     })
 
-    # ── Ejecutar con confirmación ─────────────────────────────────────────
+    # -- Ejecutar con confirmaci\u00f3n -----------------------------------------
     execution_result <- shiny::reactiveVal(NULL)
 
     shiny::observeEvent(input$btn_run, {
       shiny::req(generated_code())
       shiny::showModal(shiny::modalDialog(
-        title = "Confirmar ejecución",
-        shiny::p("¿Ejecutar el siguiente código en tu entorno R?"),
+        title = "Confirmar ejecuci\u00f3n",
+        shiny::p("\u00bfEjecutar el siguiente c\u00f3digo en tu entorno R?"),
         shiny::tags$pre(class = "bg-light p-2", style = "font-size:12px;",
                         generated_code()),
         footer = shiny::tagList(
@@ -121,7 +121,7 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
       shiny::tagList(status_box, output_box)
     })
 
-    # ── Guardar como .R ───────────────────────────────────────────────────
+    # -- Guardar como .R ---------------------------------------------------
     output$btn_save <- shiny::downloadHandler(
       filename = function() {
         nm   <- active_name()
@@ -131,7 +131,7 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
       content = function(file) {
         code <- generated_code()
         if (is.null(code) || nchar(trimws(code)) == 0)
-          code <- "# Sin operaciones generadas aún.\n"
+          code <- "# Sin operaciones generadas a\u00fan.\n"
         writeLines(code, file)
       },
       contentType = "text/plain"

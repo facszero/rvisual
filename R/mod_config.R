@@ -1,9 +1,9 @@
-#' Módulo: Configuración
+#' M\u00f3dulo: Configuraci\u00f3n
 #'
-#' Pantalla de configuración del addin.
+#' Pantalla de configuraci\u00f3n del addin.
 #' Permite gestionar proveedores IA, API keys, modelos y preferencias.
 
-# ── UI ────────────────────────────────────────────────────────────────────
+# -- UI --------------------------------------------------------------------
 mod_config_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -25,9 +25,9 @@ mod_config_ui <- function(id) {
         shiny::icon("lock"), " Tu API key se guarda localmente y nunca se comparte."
       ),
       bslib::card_footer(
-        shiny::actionButton(ns("btn_test_connection"), "Probar conexión",
+        shiny::actionButton(ns("btn_test_connection"), "Probar conexi\u00f3n",
                             icon = shiny::icon("plug"), class = "btn-outline-primary btn-sm"),
-        shiny::actionButton(ns("btn_save_config"), "Guardar configuración",
+        shiny::actionButton(ns("btn_save_config"), "Guardar configuraci\u00f3n",
                             icon = shiny::icon("floppy-disk"), class = "btn-primary btn-sm ms-2")
       )
     ),
@@ -35,17 +35,17 @@ mod_config_ui <- function(id) {
     # Columna 2: Privacidad y preferencias
     bslib::card(
       bslib::card_header(shiny::icon("shield"), " Privacidad y datos"),
-      shiny::checkboxInput(ns("allow_sample"), "Permitir envío de muestra de datos a IA", value = FALSE),
+      shiny::checkboxInput(ns("allow_sample"), "Permitir env\u00edo de muestra de datos a IA", value = FALSE),
       shiny::checkboxInput(ns("allow_schema"), "Enviar esquema del dataset (nombres y tipos)", value = TRUE),
       shiny::div(
         class = "alert alert-warning small p-2",
         shiny::icon("triangle-exclamation"),
-        " Por defecto, solo se envía el esquema (nombres y tipos de columnas), nunca las filas."
+        " Por defecto, solo se env\u00eda el esquema (nombres y tipos de columnas), nunca las filas."
       ),
       shiny::hr(),
       shiny::tags$h6("Preferencias de interfaz"),
-      shiny::selectInput(ns("ui_language"), "Idioma:", choices = c("Español" = "es"), selected = "es"),
-      shiny::checkboxInput(ns("show_code_live"), "Mostrar código en tiempo real en panel Constructor", value = TRUE),
+      shiny::selectInput(ns("ui_language"), "Idioma:", choices = c("Espa\u00f1ol" = "es"), selected = "es"),
+      shiny::checkboxInput(ns("show_code_live"), "Mostrar c\u00f3digo en tiempo real en panel Constructor", value = TRUE),
       bslib::card_footer(
         shiny::uiOutput(ns("config_status"))
       )
@@ -53,7 +53,7 @@ mod_config_ui <- function(id) {
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────
+# -- Server ----------------------------------------------------------------
 mod_config_server <- function(id, ai_config) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -69,7 +69,7 @@ mod_config_server <- function(id, ai_config) {
       }
     })
 
-    # Selector de modelo según proveedor
+    # Selector de modelo seg\u00fan proveedor
     output$model_selector <- shiny::renderUI({
       models <- switch(input$ai_provider,
         "openai"    = c("gpt-4o", "gpt-4o-mini", "gpt-4-turbo"),
@@ -80,7 +80,7 @@ mod_config_server <- function(id, ai_config) {
       shiny::selectInput(ns("ai_model"), "Modelo:", choices = models)
     })
 
-    # Guardar configuración
+    # Guardar configuraci\u00f3n
     shiny::observeEvent(input$btn_save_config, {
       cfg <- list(
         provider     = input$ai_provider,
@@ -91,10 +91,10 @@ mod_config_server <- function(id, ai_config) {
       )
       config_save(cfg)
       ai_config(cfg)
-      shiny::showNotification("Configuración guardada.", type = "message")
+      shiny::showNotification("Configuraci\u00f3n guardada.", type = "message")
     })
 
-    # Probar conexión
+    # Probar conexi\u00f3n
     shiny::observeEvent(input$btn_test_connection, {
       shiny::req(input$api_key, nchar(input$api_key) > 0)
       cfg <- list(provider = input$ai_provider, model = input$ai_model, api_key = input$api_key)
@@ -103,7 +103,7 @@ mod_config_server <- function(id, ai_config) {
         error = function(e) list(success = FALSE, message = e$message)
       )
       if (result$success) {
-        shiny::showNotification("Conexión exitosa.", type = "message")
+        shiny::showNotification("Conexi\u00f3n exitosa.", type = "message")
       } else {
         shiny::showNotification(paste("Error:", result$message), type = "error")
       }

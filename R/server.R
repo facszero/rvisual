@@ -1,13 +1,13 @@
 #' Server principal de RVisual
 #'
-#' Orquesta todos los módulos Shiny.
-#' El estado compartido entre módulos se gestiona a través de `reactives`
-#' pasados como argumentos — no mediante variables globales.
+#' Orquesta todos los m\u00f3dulos Shiny.
+#' El estado compartido entre m\u00f3dulos se gestiona a trav\u00e9s de `reactives`
+#' pasados como argumentos - no mediante variables globales.
 #'
-#' @param input,output,session Parámetros estándar de Shiny server
+#' @param input,output,session Par\u00e1metros est\u00e1ndar de Shiny server
 rvisual_server <- function(input, output, session) {
 
-  # ── Estado global reactivo compartido entre módulos ───────────────────
+  # -- Estado global reactivo compartido entre m\u00f3dulos -------------------
   # Dataset activo seleccionado
   active_dataset <- shiny::reactiveVal(NULL)
 
@@ -17,21 +17,21 @@ rvisual_server <- function(input, output, session) {
   # Lista de operaciones construidas visualmente (ver operation_model.R)
   operation_stack <- shiny::reactiveVal(list())
 
-  # Código R generado a partir del operation_stack
+  # C\u00f3digo R generado a partir del operation_stack
   generated_code <- shiny::reactiveVal("")
 
-  # Configuración de IA (proveedor, modelo, api key, etc.)
+  # Configuraci\u00f3n de IA (proveedor, modelo, api key, etc.)
   ai_config <- shiny::reactiveVal(config_load())
 
-  # Historial de sesión
+  # Historial de sesi\u00f3n
   session_history <- shiny::reactiveVal(list())
 
-  # ── Inicialización ────────────────────────────────────────────────────
-  # Llamada directa (sin observe) — solo se ejecuta una vez al iniciar
+  # -- Inicializaci\u00f3n ----------------------------------------------------
+  # Llamada directa (sin observe) - solo se ejecuta una vez al iniciar
   history_log(session_history, type = "session_start",
               detail = list(timestamp = as.character(Sys.time())))
 
-  # ── Módulos ───────────────────────────────────────────────────────────
+  # -- M\u00f3dulos -----------------------------------------------------------
   mod_dataset_server(
     id             = "dataset",
     active_dataset = active_dataset,
@@ -77,7 +77,7 @@ rvisual_server <- function(input, output, session) {
     ai_config = ai_config
   )
 
-  # ── Historial modal ───────────────────────────────────────────────────
+  # -- Historial modal ---------------------------------------------------
   shiny::observeEvent(input$btn_history, {
     shiny::showModal(
       shiny::modalDialog(
