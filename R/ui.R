@@ -7,6 +7,7 @@
 #' @import shiny bslib htmltools
 rvisual_ui <- function() {
   bslib::page_navbar(
+    id = "main_nav",
     title = shiny::tags$span(
       shiny::tags$img(src = "rvisual_logo.png", height = "24px", style = "margin-right:8px;"),
       "RVisual"

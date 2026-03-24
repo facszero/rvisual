@@ -68,7 +68,8 @@ rvisual_server <- function(input, output, session) {
     operation_stack = operation_stack,
     generated_code  = generated_code,
     ai_config       = ai_config,
-    history         = session_history
+    history         = session_history,
+    parent_session  = session
   )
 
   mod_config_server(

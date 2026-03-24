@@ -65,7 +65,7 @@ mod_ai_ui <- function(id) {
 
 # ── Server ────────────────────────────────────────────────────────────────
 mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
-                           generated_code, ai_config, history) {
+                           generated_code, ai_config, history, parent_session) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -202,7 +202,28 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
       })
     })
 
-    # Ejecutar código propuesto por IA (acción del usuario)
+    # ── Enviar código al panel Código R ──────────────────────────────────────
+    shiny::observe({
+      msgs <- chat_history()
+      lapply(seq_along(msgs), function(i) {
+        msg <- msgs[[i]]
+        if (!is.null(msg$code) && !is.null(msg$code_id)) {
+          btn_id <- paste0("send_to_code_", msg$code_id)
+          shiny::observeEvent(input[[btn_id]], {
+            generated_code(msg$code)
+            # Navegar a la pestaña Código R
+            bslib::nav_select("main_nav", "panel_code", session = parent_session)
+            shiny::showNotification(
+              "\u2192 Código enviado a la pestaña Código R",
+              type = "message", duration = 3
+            )
+            history_log(history, "ai_code_sent_to_panel", list(code_id = msg$code_id))
+          }, ignoreInit = TRUE, once = TRUE)
+        }
+      })
+    })
+
+    # ── Ejecutar código directo desde el chat ────────────────────────────────
     shiny::observe({
       msgs <- chat_history()
       lapply(seq_along(msgs), function(i) {
@@ -249,16 +270,24 @@ render_chat_message_ui <- function(msg) {
       class = paste("d-inline-block rounded p-2 px-3", bg),
       style = "max-width:90%; font-size:14px;",
       shiny::p(msg$content, class = "mb-1"),
-      # Si hay código, mostrar bloque con botón de ejecutar
+      # Si hay código, mostrar bloque con dos botones
       if (!is.null(msg$code)) {
         shiny::tagList(
           shiny::tags$pre(class = "bg-white border rounded p-2 mt-2",
-                          style = "font-size:12px;", msg$code),
-          shiny::actionButton(
-            paste0("run_ai_code_", msg$code_id),
-            "Ejecutar este código",
-            icon  = shiny::icon("play"),
-            class = "btn-sm btn-success mt-1"
+                          style = "font-size:12px; white-space:pre-wrap;", msg$code),
+          shiny::div(class = "d-flex gap-2 mt-1",
+            shiny::actionButton(
+              paste0("send_to_code_", msg$code_id),
+              "\u2192 Enviar a C\u00f3digo R",
+              icon  = shiny::icon("code"),
+              class = "btn-sm btn-primary"
+            ),
+            shiny::actionButton(
+              paste0("run_ai_code_", msg$code_id),
+              "Ejecutar directo",
+              icon  = shiny::icon("play"),
+              class = "btn-sm btn-outline-success"
+            )
           )
         )
       }
