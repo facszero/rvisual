@@ -7,7 +7,7 @@
 ai_send(cfg, system_prompt, user_prompt)
 }
 \arguments{
-\item{cfg}{Lista de configuraci\u00f3n del proveedor IA: \code{provider}, \code{model}, \code{api_key}.}
+\item{cfg}{Lista de configuración del proveedor IA: \code{provider}, \code{model}, \code{api_key}.}
 \item{system_prompt}{String con el prompt de sistema (contexto del dataset activo).}
 \item{user_prompt}{String con el mensaje del usuario.}
 }
