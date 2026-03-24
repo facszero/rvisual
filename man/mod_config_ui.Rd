@@ -6,6 +6,9 @@
 \usage{
 mod_config_ui(id)
 }
+\arguments{
+\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+}
 \description{
 Pantalla de configuración del addin.
 Permite gestionar proveedores IA, API keys, modelos y preferencias.

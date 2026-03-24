@@ -6,6 +6,9 @@
 \usage{
 mod_builder_ui(id)
 }
+\arguments{
+\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+}
 \description{
 Módulo: Constructor Visual de Operaciones
 }

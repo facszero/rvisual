@@ -6,6 +6,9 @@
 \usage{
 mod_ai_ui(id)
 }
+\arguments{
+\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+}
 \description{
 Panel de chat con agente IA multi-proveedor.
 El agente conoce:

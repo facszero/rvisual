@@ -6,6 +6,9 @@
 \usage{
 classify_visual_type(col)
 }
+\arguments{
+\item{col}{Vector de una columna del data.frame a clasificar.}
+}
 \description{
 Clasificar tipo visual de una columna (para mostrar al usuario)
 }

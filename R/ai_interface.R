@@ -23,10 +23,10 @@ ai_send <- function(cfg, system_prompt, user_prompt) {
 ai_test_connection <- function(cfg) {
   # Primero verificar conectividad básica a internet
   internet_ok <- tryCatch({
-    con <- url("https://www.google.com", open = "r", timeout = 5)
+    con <- url("https://www.google.com", open = "r")
     close(con)
     TRUE
-  }, error = function(e) FALSE)
+  }, error = function(e) FALSE, warning = function(w) FALSE)
 
   if (!internet_ok) {
     return(list(success = FALSE,

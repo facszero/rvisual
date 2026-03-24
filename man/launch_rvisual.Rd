@@ -6,6 +6,9 @@
 \usage{
 launch_rvisual(browser = FALSE)
 }
+\arguments{
+\item{browser}{Lógico. Si \code{TRUE} abre en el browser del sistema en lugar del panel Viewer de RStudio. Default \code{FALSE}.}
+}
 \description{
 Punto de entrada del addin de RStudio.
 }

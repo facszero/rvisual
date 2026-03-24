@@ -6,6 +6,9 @@
 \usage{
 mod_code_ui(id)
 }
+\arguments{
+\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+}
 \description{
 Muestra en tiempo real el código R producido por el constructor visual.
 Permite:
