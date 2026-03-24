@@ -148,7 +148,13 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
     dfs_entorno <- shiny::reactive({
       input$btn_refresh
       objs <- ls(envir = .GlobalEnv)
-      objs[sapply(objs, function(x) is.data.frame(get(x, envir = .GlobalEnv)))]
+      if (length(objs) == 0) return(character(0))
+      # vapply garantiza vector lógico; tryCatch evita error en objetos no accesibles
+      es_df <- vapply(objs, function(x) {
+        tryCatch(is.data.frame(get(x, envir = .GlobalEnv, inherits = FALSE)),
+                 error = function(e) FALSE)
+      }, logical(1))
+      objs[es_df]
     })
 
     output$lista_entorno <- shiny::renderUI({
