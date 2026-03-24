@@ -6,6 +6,9 @@
 \usage{
 rstudio_run_in_console(code)
 }
+\arguments{
+\item{code}{String con el código R a ejecutar en la consola de RStudio.}
+}
 \description{
 Ejecutar código en la consola de RStudio
 }

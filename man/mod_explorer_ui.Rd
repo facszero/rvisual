@@ -6,6 +6,9 @@
 \usage{
 mod_explorer_ui(id)
 }
+\arguments{
+\item{id}{ID del módulo Shiny (string). Usado por \code{NS()} para crear el namespace del módulo.}
+}
 \description{
 Vista tabular interactiva del dataset activo.
 Incluye:

@@ -6,6 +6,9 @@
 \usage{
 mod_history_ui_inline(history_list)
 }
+\arguments{
+\item{history_list}{Lista de eventos del historial de sesión, generada por \code{history_log()}.}
+}
 \description{
 Renderizar historial como UI inline (para modal)
 }
