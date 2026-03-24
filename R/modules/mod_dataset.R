@@ -133,6 +133,8 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         rv$seleccionado       <- nombre
         active_dataset(df)
         active_name(nombre)
+        # Exportar al entorno global para que el código R generado funcione directamente
+        assign(nombre, df, envir = .GlobalEnv)
         history_log(history, "dataset_loaded",
                     list(name = nombre, nrow = nrow(df), ncol = ncol(df)))
         rv$msg_carga <- paste0("\u2714 '", nombre, "' cargado (",
@@ -172,6 +174,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
           rv$seleccionado    <- nm
           active_dataset(df)
           active_name(nm)
+          assign(nm, df, envir = .GlobalEnv)
           history_log(history, "dataset_from_env", list(name = nm))
         }, ignoreInit = TRUE)
       })
@@ -214,6 +217,7 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         rv$seleccionado <- nm
         active_dataset(rv$datasets[[nm]])
         active_name(nm)
+        assign(nm, rv$datasets[[nm]], envir = .GlobalEnv)
       }
     })
 
