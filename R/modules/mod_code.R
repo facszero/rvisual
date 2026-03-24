@@ -136,7 +136,6 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
 
       shiny::tagList(status_box, output_box)
     })
-    })
 
     # Guardar como archivo .R
     shiny::observeEvent(input$btn_save, {
