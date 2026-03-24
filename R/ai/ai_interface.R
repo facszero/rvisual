@@ -44,12 +44,17 @@ ai_test_connection <- function(cfg) {
 }
 
 # ── Helper HTTP unificado ─────────────────────────────────────────────────
-# Usa jsonlite + curl vía utils::download.file como fallback si httr2 falla
 
 http_post_json <- function(url, headers, body_list) {
   body_json <- jsonlite::toJSON(body_list, auto_unbox = TRUE)
 
-  # Intentar con httr2 primero
+  # Leer proxy del entorno (soporta http_proxy, HTTP_PROXY, https_proxy)
+  proxy <- Sys.getenv("https_proxy",
+           Sys.getenv("HTTPS_PROXY",
+           Sys.getenv("http_proxy",
+           Sys.getenv("HTTP_PROXY", ""))))
+
+  # Intentar con httr2
   result <- tryCatch({
     req <- httr2::request(url)
     for (nm in names(headers)) {
@@ -58,21 +63,29 @@ http_post_json <- function(url, headers, body_list) {
     req <- req |>
       httr2::req_body_raw(body_json, type = "application/json") |>
       httr2::req_timeout(45) |>
-      httr2::req_error(is_error = function(r) FALSE) |>
-      httr2::req_perform()
-    httr2::resp_body_json(req)
+      httr2::req_error(is_error = function(r) FALSE)
+
+    # Aplicar proxy si está configurado
+    if (nzchar(proxy)) {
+      req <- httr2::req_options(req, proxy = proxy)
+    }
+
+    resp <- httr2::req_perform(req)
+    httr2::resp_body_json(resp)
   }, error = function(e1) {
-    # Fallback: usar curl del sistema si está disponible
+    # Fallback: curl del sistema (respeta proxy del SO automáticamente)
     if (nzchar(Sys.which("curl"))) {
       header_args <- paste(
-        sapply(names(headers), function(h) paste0('-H "', h, ': ', headers[[h]], '"')),
+        sapply(names(headers), function(h)
+          paste0('-H "', h, ': ', headers[[h]], '"')),
         collapse = " "
       )
+      proxy_arg <- if (nzchar(proxy)) paste0('-x "', proxy, '" ') else ""
       tmp_body <- tempfile(fileext = ".json")
       tmp_out  <- tempfile(fileext = ".json")
       writeLines(body_json, tmp_body)
-      cmd <- sprintf('curl -s -X POST %s -d @"%s" "%s" -o "%s"',
-                     header_args, tmp_body, url, tmp_out)
+      cmd <- sprintf('curl -s -X POST %s%s -d @"%s" "%s" -o "%s"',
+                     proxy_arg, header_args, tmp_body, url, tmp_out)
       system(cmd, wait = TRUE)
       if (file.exists(tmp_out) && file.size(tmp_out) > 0) {
         jsonlite::fromJSON(tmp_out, simplifyVector = FALSE)
