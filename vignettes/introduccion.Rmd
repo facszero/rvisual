@@ -1,0 +1,121 @@
+---
+title: "Introducción a RVisual"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introducción a RVisual}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+## ¿Qué es RVisual?
+
+RVisual es un addin de RStudio que permite trabajar con datos en R sin
+necesidad de escribir código manualmente. Está diseñado para usuarios
+que vienen de SPSS y quieren aprovechar el ecosistema R sin la curva
+de aprendizaje inicial.
+
+**Principio central:** toda acción visual genera código R limpio y
+reproducible usando tidyverse.
+
+## Instalación
+
+```{r instalacion}
+# Instalar dependencias primero
+install.packages(c(
+  "shiny", "bslib", "DT", "dplyr", "tidyr",
+  "readxl", "haven", "httr2", "jsonlite",
+  "glue", "rlang", "rstudioapi", "miniUI"
+))
+
+# Instalar RVisual desde GitHub
+remotes::install_github("facszero/rvisual")
+```
+
+## Uso básico
+
+```{r uso}
+library(rvisual)
+
+# Abrir la interfaz (panel Viewer de RStudio)
+launch_rvisual()
+
+# Abrir en el browser (necesario para el Asistente IA)
+launch_rvisual(browser = TRUE)
+```
+
+## Paneles disponibles
+
+### Dataset
+Cargá archivos CSV, Excel (.xlsx/.xls), RDS o SPSS (.sav) con un límite
+de 50 MB. También podés importar data.frames ya cargados en memoria con
+el botón **Actualizar** del panel "Entorno global".
+
+### Explorador
+Vista tabular del dataset activo con paginación, búsqueda y estadísticas
+rápidas por variable (mínimo, máximo, media, valores únicos, % de NA).
+
+### Constructor
+Construí transformaciones visualmente con 8 operaciones:
+
+| Operación | Equivalente R |
+|---|---|
+| Seleccionar columnas | `dplyr::select()` |
+| Filtrar registros | `dplyr::filter()` |
+| Ordenar | `dplyr::arrange()` |
+| Agrupar y resumir | `dplyr::group_by() |> summarise()` |
+| Crear variable | `dplyr::mutate()` |
+| Renombrar columna | `dplyr::rename()` |
+| Recodificar valores | `dplyr::case_when()` |
+| Unir tablas (join) | `dplyr::left_join()` etc. |
+
+Cada operación se agrega al stack y podés eliminar cualquiera
+individualmente.
+
+### Código R
+Muestra el código R generado por el Constructor en tiempo real.
+Podés:
+- **Copiar** al portapapeles
+- **Insertar** en el script activo de RStudio
+- **Ejecutar** con confirmación y ver el resultado inline
+- **Guardar** como archivo .R
+
+### Asistente IA
+Copiloto contextual que conoce el nombre y esquema del dataset activo.
+Soporta OpenAI (GPT-4o), Anthropic (Claude) y Google Gemini.
+
+```{r ia_ejemplo}
+# Ejemplo de consulta al asistente:
+# "filtrá los registros donde Marca contenga 'samsung'
+#  y mostrá cuántos hay por región"
+```
+
+El asistente genera código R que podés enviar a la pestaña Código R
+con el botón **→ Enviar a Código R**, o ejecutar directamente.
+
+> **Nota:** El Asistente IA requiere abrir con `launch_rvisual(browser = TRUE)`
+> en entornos con proxy corporativo.
+
+### Configuración
+Gestioná tu API key del proveedor IA. Las claves se guardan localmente.
+Por defecto solo se envía el esquema del dataset (nombres y tipos de
+columnas), nunca las filas.
+
+## Proxy corporativo
+
+Si trabajás en una red con proxy, configuralo antes de lanzar la app:
+
+```{r proxy}
+Sys.setenv(http_proxy  = "http://proxy.empresa.com:3128")
+Sys.setenv(https_proxy = "http://proxy.empresa.com:3128")
+launch_rvisual(browser = TRUE)
+```
+
+O agregalo a tu `.Renviron` para que sea permanente:
+```
+http_proxy=proxy.empresa.com:3128
+https_proxy=proxy.empresa.com:3128
+```

@@ -1,7 +1,14 @@
-#' Configuración persistente de RVisual
+#' Configuración persistente y historial de sesión
 #'
-#' Guarda/lee configuración en un archivo JSON local
-#' usando el directorio de datos del usuario (rappdirs-style).
+#' Funciones para guardar/cargar configuración del usuario (proveedor IA,
+#' API keys, preferencias) y registrar eventos durante la sesión.
+#'
+#' La configuración se guarda en un archivo JSON en el directorio de datos
+#' del usuario (ver \code{\link[tools]{R_user_dir}}).
+#'
+#' @name config
+#' @keywords internal
+NULL
 
 config_path <- function() {
   dir <- tools::R_user_dir("rvisual", which = "config")
@@ -9,54 +16,45 @@ config_path <- function() {
   file.path(dir, "config.json")
 }
 
-#' Guardar configuración
-#' @param cfg Lista de configuración
-#' @export
+#' Guardar configuración del usuario
+#' @param cfg Lista con los campos de configuración.
+#' @return Invisiblemente \code{cfg}.
+#' @keywords internal
 config_save <- function(cfg) {
-  # Nunca guardar la API key en texto plano si se puede evitar
-  # TODO: integrar con keyring en Fase 6
   jsonlite::write_json(cfg, config_path(), auto_unbox = TRUE)
   invisible(cfg)
 }
 
 #' Cargar configuración guardada
-#' @return Lista de configuración o lista vacía
-#' @export
+#' @return Lista de configuración, o lista vacía si no existe.
+#' @keywords internal
 config_load <- function() {
   path <- config_path()
   if (!file.exists(path)) return(list())
-  tryCatch(
-    jsonlite::read_json(path, simplifyVector = FALSE),
-    error = function(e) list()
-  )
+  tryCatch(jsonlite::read_json(path, simplifyVector = FALSE),
+           error = function(e) list())
 }
 
-# ── Historial de sesión ───────────────────────────────────────────────────
-
-#' Registrar evento en el historial de sesión
+#' Registrar un evento en el historial de sesión
 #'
-#' @param history reactiveVal que contiene la lista de eventos
-#' @param type    String identificador del tipo de evento
-#' @param detail  Lista con detalles del evento
-#' @export
+#' @param history \code{reactiveVal} que contiene la lista de eventos.
+#' @param type String identificador del tipo de evento.
+#' @param detail Lista con detalles adicionales del evento.
+#' @return Invisiblemente el entry creado.
+#' @keywords internal
 history_log <- function(history, type, detail = list()) {
-  entry <- list(
-    type      = type,
-    detail    = detail,
-    timestamp = Sys.time()
-  )
-  # isolate() evita que la LECTURA cree dependencia reactiva,
-  # previniendo un loop infinito cuando history_log se llama desde observe()
+  entry <- list(type = type, detail = detail, timestamp = Sys.time())
   history(c(shiny::isolate(history()), list(entry)))
   invisible(entry)
 }
 
-#' Renderizar historial como UI inline (para modal)
-#' @export
+#' Renderizar historial como tabla HTML (para modal)
+#' @param history_list Lista de eventos del historial.
+#' @return Objeto UI de Shiny.
+#' @keywords internal
 mod_history_ui_inline <- function(history_list) {
-  if (length(history_list) == 0) {
+  if (length(history_list) == 0)
     return(shiny::p("Sin eventos registrados.", class = "text-muted"))
-  }
 
   shiny::tags$table(
     class = "table table-sm table-striped",
@@ -70,11 +68,9 @@ mod_history_ui_inline <- function(history_list) {
         shiny::tags$tr(
           shiny::tags$td(format(e$timestamp, "%H:%M:%S")),
           shiny::tags$td(shiny::tags$code(e$type)),
-          shiny::tags$td(
-            shiny::tags$small(
-              paste(names(e$detail), unlist(e$detail), sep = "=", collapse = ", ")
-            )
-          )
+          shiny::tags$td(shiny::tags$small(
+            paste(names(e$detail), unlist(e$detail), sep = "=", collapse = ", ")
+          ))
         )
       })
     )

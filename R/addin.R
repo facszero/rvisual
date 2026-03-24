@@ -1,9 +1,30 @@
 #' Lanzar RVisual
 #'
-#' Abre la interfaz visual de RVisual como gadget de RStudio o en el browser.
+#' Abre la interfaz visual de RVisual como gadget integrado en RStudio
+#' o en el browser del sistema.
 #'
-#' @param browser Lógico. Si TRUE abre en el browser del sistema (necesario
-#'   para que el Asistente IA pueda hacer requests HTTP). Default FALSE.
+#' RVisual es un addin para RStudio que permite a usuarios con experiencia
+#' en SPSS trabajar con datos en R sin necesidad de escribir código
+#' manualmente. Toda acción visual genera código R limpio y reproducible
+#' usando tidyverse.
+#'
+#' @param browser Lógico. Si \code{TRUE} abre en el browser del sistema
+#'   en lugar del panel Viewer de RStudio. Recomendado cuando se usa el
+#'   Asistente IA, ya que el panel embebido bloquea conexiones HTTP
+#'   salientes. Default \code{FALSE}.
+#'
+#' @return Invisiblemente \code{NULL}. La función bloquea la sesión R
+#'   mientras la interfaz está abierta (comportamiento normal de gadgets
+#'   Shiny).
+#'
+#' @examples
+#' \dontrun{
+#' # Abrir en panel Viewer de RStudio
+#' launch_rvisual()
+#'
+#' # Abrir en browser (necesario para el Asistente IA)
+#' launch_rvisual(browser = TRUE)
+#' }
 #'
 #' @export
 #' @importFrom shiny runGadget runApp shinyApp dialogViewer
