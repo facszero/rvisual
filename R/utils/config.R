@@ -45,7 +45,9 @@ history_log <- function(history, type, detail = list()) {
     detail    = detail,
     timestamp = Sys.time()
   )
-  history(c(history(), list(entry)))
+  # isolate() evita que la LECTURA cree dependencia reactiva,
+  # previniendo un loop infinito cuando history_log se llama desde observe()
+  history(c(shiny::isolate(history()), list(entry)))
   invisible(entry)
 }
 

@@ -86,8 +86,12 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
     # Estado local: lista de todos los datasets cargados en este panel
     rv <- shiny::reactiveValues(
       datasets     = list(),
-      seleccionado = NULL
+      seleccionado = NULL,
+      msg_carga    = ""       # mensaje de resultado de carga
     )
+
+    # ── Mensaje de carga (renderText estático que lee rv$msg_carga) ───────────
+    output$msg_carga <- shiny::renderText({ rv$msg_carga })
 
     # ── ¿Es CSV? ─────────────────────────────────────────────────────────────
     output$es_csv <- shiny::reactive({
@@ -131,9 +135,10 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
         active_name(nombre)
         history_log(history, "dataset_loaded",
                     list(name = nombre, nrow = nrow(df), ncol = ncol(df)))
-        output$msg_carga <- shiny::renderText(
-          paste0("\u2714 '", nombre, "' cargado (", nrow(df), " filas \u00d7 ", ncol(df), " cols)")
-        )
+        rv$msg_carga <- paste0("\u2714 '", nombre, "' cargado (",
+                               nrow(df), " filas \u00d7 ", ncol(df), " cols)")
+      } else {
+        rv$msg_carga <- "\u26a0 No se pudo cargar el archivo."
       }
     })
 

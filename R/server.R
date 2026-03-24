@@ -27,10 +27,9 @@ rvisual_server <- function(input, output, session) {
   session_history <- shiny::reactiveVal(list())
 
   # ── Inicialización ────────────────────────────────────────────────────
-  shiny::observe({
-    history_log(session_history, type = "session_start",
-                detail = list(timestamp = Sys.time()))
-  })
+  # Llamada directa (sin observe) — solo se ejecuta una vez al iniciar
+  history_log(session_history, type = "session_start",
+              detail = list(timestamp = as.character(Sys.time())))
 
   # ── Módulos ───────────────────────────────────────────────────────────
   mod_dataset_server(
