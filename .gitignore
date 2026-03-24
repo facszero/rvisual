@@ -7,7 +7,6 @@ inst/doc
 /doc
 /Meta
 /man/*.Rd
-NAMESPACE
 *.o
 *.so
 *.dll
