@@ -6,12 +6,12 @@ Authors@R:
            email = "facs.zero@gmail.com", 
            role = c("aut", "cre"),
            comment = c(ORCID = ""))
-Description: An 'RStudio' addin providing a visual, point-and-click interface
+Description: An 'RStudio' 'addin' providing a visual, point-and-click interface
     for data manipulation and analysis, designed for users transitioning from
     'SPSS' to R. Every visual action generates clean, reproducible R code using
-    tidyverse conventions ('dplyr', 'tidyr'). Includes a context-aware AI copilot
-    supporting multiple LLM providers ('OpenAI', 'Anthropic' Claude, 'Google Gemini')
-    with built-in proxy support and privacy controls.
+    'tidyverse' conventions ('dplyr', 'tidyr'). Includes a context-aware AI
+    copilot supporting multiple 'LLM' providers ('OpenAI', 'Anthropic' Claude,
+    'Google Gemini') with built-in proxy support and privacy controls.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
