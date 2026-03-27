@@ -3,7 +3,34 @@
 #' Permite conectarse a PostgreSQL, MySQL, SQL Server, Oracle, SQLite y DB2
 #' y cargar tablas como datasets activos en RVisual.
 
-# ── Helpers internos ──────────────────────────────────────────────────────
+# ── Helpers de persistencia de config de BD ───────────────────────────────
+
+#' Guardar ultima configuracion de BD para un motor
+#' @keywords internal
+db_config_save <- function(tipo, host, port, dbname, user,
+                           oracle_service = NULL, oracle_conn_type = NULL,
+                           driver_name = NULL) {
+  cfg <- config_load()
+  if (is.null(cfg$db_last)) cfg$db_last <- list()
+  cfg$db_last[[tipo]] <- list(
+    host             = host,
+    port             = port,
+    dbname           = dbname,
+    user             = user,
+    oracle_service   = oracle_service,
+    oracle_conn_type = oracle_conn_type,
+    driver_name      = driver_name
+  )
+  config_save(cfg)
+}
+
+#' Cargar ultima configuracion de BD para un motor
+#' @keywords internal
+db_config_load <- function(tipo) {
+  cfg <- config_load()
+  if (is.null(cfg$db_last)) return(NULL)
+  cfg$db_last[[tipo]]
+}
 
 #' @keywords internal
 db_drivers <- function() {
@@ -201,12 +228,38 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
     con_activa  <- shiny::reactiveVal(NULL)   # conexi\u00f3n DBI activa
     tablas_list <- shiny::reactiveVal(NULL)   # vector de tablas disponibles
 
-    # ── Actualizar puerto al cambiar motor ────────────────────────────────
+    # ── Actualizar puerto al cambiar motor + cargar config guardada ───────
     shiny::observeEvent(input$tipo, {
       puertos <- c(postgresql = 5432, mysql = 3306, sqlserver = 1433,
                    oracle = 1521, db2 = 50000)
       p <- puertos[[input$tipo]]
       if (!is.na(p)) shiny::updateNumericInput(session, "port", value = p)
+
+      # Cargar ultima config guardada para este motor
+      saved <- db_config_load(input$tipo)
+      if (!is.null(saved)) {
+        if (!is.null(saved$host))
+          shiny::updateTextInput(session, "host",   value = saved$host)
+        if (!is.null(saved$port))
+          shiny::updateNumericInput(session, "port", value = as.integer(saved$port))
+        if (!is.null(saved$dbname))
+          shiny::updateTextInput(session, "dbname", value = saved$dbname)
+        if (!is.null(saved$user))
+          shiny::updateTextInput(session, "user",   value = saved$user)
+        if (!is.null(saved$oracle_service))
+          shiny::updateTextInput(session, "oracle_service",
+                                 value = saved$oracle_service)
+        if (!is.null(saved$oracle_conn_type))
+          shiny::updateSelectInput(session, "oracle_conn_type",
+                                   selected = saved$oracle_conn_type)
+        if (!is.null(saved$driver_name))
+          shiny::updateTextInput(session, "driver_name",
+                                 value = saved$driver_name)
+        shiny::showNotification(
+          paste0("Configuraci\u00f3n anterior de ",
+                 db_drivers()[[input$tipo]]$label, " cargada."),
+          type = "message", duration = 2)
+      }
     })
 
     # ── Conectar ──────────────────────────────────────────────────────────
@@ -244,6 +297,17 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
           con_activa(result$con)
           tablas <- tryCatch(DBI::dbListTables(result$con), error = function(e) character(0))
           tablas_list(tablas)
+          # Guardar config para la proxima vez (sin contrasena)
+          db_config_save(
+            tipo             = input$tipo,
+            host             = input$host,
+            port             = input$port,
+            dbname           = input$dbname,
+            user             = input$user,
+            oracle_service   = input$oracle_service,
+            oracle_conn_type = input$oracle_conn_type,
+            driver_name      = input$driver_name
+          )
           output$msg_conexion <- shiny::renderText(
             paste0("\u2713 Conectado. ", length(tablas), " tabla(s) disponible(s).")
           )
