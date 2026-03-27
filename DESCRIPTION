@@ -30,6 +30,7 @@ Imports:
     httr2 (>= 0.2.3),
     glue (>= 1.6.0),
     rlang (>= 1.1.0),
+    DBI (>= 1.1.0),
     tools
 Suggests:
     testthat (>= 3.0.0),
@@ -37,7 +38,12 @@ Suggests:
     rmarkdown,
     haven,
     readr,
-    writexl
+    writexl,
+    RPostgres,
+    RMySQL,
+    ROracle,
+    RSQLite,
+    odbc
 Config/testthat/edition: 3
 URL: https://github.com/facszero/rvisual
 BugReports: https://github.com/facszero/rvisual/issues

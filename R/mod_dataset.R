@@ -16,47 +16,65 @@ mod_dataset_ui <- function(id) {
     "))),
 
     shiny::fluidRow(
-      # -- Columna izquierda: Carga de archivos ------------------------------
+      # -- Columna izquierda: pestanas Archivo / BD --------------------------
       shiny::column(5,
-        shiny::div(id = ns("panel_carga"),
-          shiny::h5(shiny::icon("folder-open"), " Cargar archivo", style = "margin-top:0"),
-          shiny::fileInput(ns("archivo"),
-            label       = NULL,
-            accept      = c(".csv", ".xlsx", ".xls", ".rds", ".sav"),
-            buttonLabel = "Seleccionar\u2026",
-            placeholder = "CSV, Excel, RDS, SAV"
-          ),
-          shiny::conditionalPanel(
-            condition = paste0("output['", ns("es_csv"), "']"),
-            shiny::wellPanel(style = "padding:8px; background:#f8f9fa;",
-              shiny::fluidRow(
-                shiny::column(6, shiny::selectInput(ns("csv_sep"), "Separador",
-                  choices  = c("Coma (,)" = ",", "Punto y coma (;)" = ";",
-                               "Tab" = "\t", "Espacio" = " "),
-                  selected = ",")),
-                shiny::column(6, shiny::selectInput(ns("csv_enc"), "Encoding",
-                  choices  = c("UTF-8" = "UTF-8", "Latin-1" = "latin1"),
-                  selected = "UTF-8"))
+        bslib::navset_tab(
+          id = ns("fuente_tab"),
+
+          # -- Pestana 1: Cargar archivo --------------------------------------
+          bslib::nav_panel(
+            title = shiny::tagList(shiny::icon("folder-open"), " Archivo"),
+            value = "archivo",
+            shiny::div(style = "padding-top:10px;",
+              shiny::div(id = ns("panel_carga"),
+                shiny::fileInput(ns("archivo"),
+                  label       = NULL,
+                  accept      = c(".csv", ".xlsx", ".xls", ".rds", ".sav"),
+                  buttonLabel = "Seleccionar\u2026",
+                  placeholder = "CSV, Excel, RDS, SAV"
+                ),
+                shiny::conditionalPanel(
+                  condition = paste0("output['", ns("es_csv"), "']"),
+                  shiny::wellPanel(style = "padding:8px; background:#f8f9fa;",
+                    shiny::fluidRow(
+                      shiny::column(6, shiny::selectInput(ns("csv_sep"), "Separador",
+                        choices  = c("Coma (,)" = ",", "Punto y coma (;)" = ";",
+                                     "Tab" = "\t", "Espacio" = " "),
+                        selected = ",")),
+                      shiny::column(6, shiny::selectInput(ns("csv_enc"), "Encoding",
+                        choices  = c("UTF-8" = "UTF-8", "Latin-1" = "latin1"),
+                        selected = "UTF-8"))
+                    ),
+                    shiny::checkboxInput(ns("csv_header"), "Primera fila = encabezado",
+                                         value = TRUE)
+                  )
+                ),
+                shiny::textInput(ns("nombre_ds"), "Nombre del dataset",
+                                 placeholder = "ej: datos_encuesta"),
+                shiny::actionButton(ns("btn_cargar"), "Cargar",
+                  icon = shiny::icon("upload"), class = "btn-primary btn-sm"),
+                shiny::div(class = "ds-hint", shiny::textOutput(ns("msg_carga")))
               ),
-              shiny::checkboxInput(ns("csv_header"), "Primera fila = encabezado", value = TRUE)
+              shiny::hr(),
+              shiny::h5(shiny::icon("database"), " Entorno global"),
+              shiny::div(class = "ds-hint", "Data.frames disponibles en memoria:"),
+              shiny::uiOutput(ns("lista_entorno")),
+              shiny::actionButton(ns("btn_refresh"), shiny::icon("sync"),
+                                  label = " Actualizar",
+                                  class = "btn-sm btn-outline-secondary",
+                                  style = "margin-top:6px")
             )
           ),
-          shiny::textInput(ns("nombre_ds"), "Nombre del dataset",
-                           placeholder = "ej: datos_encuesta"),
-          shiny::actionButton(ns("btn_cargar"), "Cargar", icon = shiny::icon("upload"),
-                              class = "btn-primary btn-sm"),
-          shiny::div(class = "ds-hint", shiny::textOutput(ns("msg_carga")))
-        ),
 
-        shiny::hr(),
-
-        shiny::h5(shiny::icon("database"), " Entorno global"),
-        shiny::div(class = "ds-hint", "Data.frames disponibles en memoria:"),
-        shiny::uiOutput(ns("lista_entorno")),
-        shiny::actionButton(ns("btn_refresh"), shiny::icon("sync"),
-                            label  = " Actualizar",
-                            class  = "btn-sm btn-outline-secondary",
-                            style  = "margin-top:6px")
+          # -- Pestana 2: Base de datos ---------------------------------------
+          bslib::nav_panel(
+            title = shiny::tagList(shiny::icon("database"), " Base de datos"),
+            value = "bd",
+            shiny::div(style = "padding-top:10px;",
+              mod_db_ui(ns("db"))
+            )
+          )
+        )
       ),
 
       # -- Columna derecha: Datasets cargados --------------------------------
@@ -92,10 +110,17 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       msg_carga    = ""       # mensaje de resultado de carga
     )
 
-    # -- Mensaje de carga (renderText est\u00e1tico que lee rv$msg_carga) -----------
+    # -- Inicializar modulo de conexion a BD ----------------------------------
+    mod_db_server("db",
+      active_dataset = active_dataset,
+      active_name    = active_name,
+      datasets_rv    = rv
+    )
+
+    # -- Mensaje de carga -------------------------------------------------------
     output$msg_carga <- shiny::renderText({ rv$msg_carga })
 
-    # -- \u00bfEs CSV? -------------------------------------------------------------
+    # -- Es CSV? ----------------------------------------------------------------
     output$es_csv <- shiny::reactive({
       shiny::req(input$archivo)
       tolower(tools::file_ext(input$archivo$name)) == "csv"
