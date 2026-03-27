@@ -307,31 +307,24 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
         result <- tryCatch({
           limite <- as.integer(input$limite_filas)
           df <- if (limite > 0) {
-            DBI::dbGetQuery(
-              con_activa(),
-              paste0("SELECT * FROM ", input$tabla_sel, " FETCH FIRST ",
-                     limite, " ROWS ONLY")
+            # Sintaxis SQL segun motor
+            sql <- switch(input$tipo,
+              oracle     = paste0("SELECT * FROM ", input$tabla_sel,
+                                  " WHERE ROWNUM <= ", limite),
+              sqlserver  = paste0("SELECT TOP ", limite, " * FROM ",
+                                  input$tabla_sel),
+              db2        = paste0("SELECT * FROM ", input$tabla_sel,
+                                  " FETCH FIRST ", limite, " ROWS ONLY"),
+              # PostgreSQL, MySQL, SQLite
+              paste0("SELECT * FROM ", input$tabla_sel, " LIMIT ", limite)
             )
+            DBI::dbGetQuery(con_activa(), sql)
           } else {
             DBI::dbReadTable(con_activa(), input$tabla_sel)
           }
           list(ok = TRUE, df = df)
         }, error = function(e) {
-          # Fallback: intentar con LIMIT (MySQL/PostgreSQL/SQLite)
-          tryCatch({
-            limite <- as.integer(input$limite_filas)
-            df <- if (limite > 0) {
-              DBI::dbGetQuery(
-                con_activa(),
-                paste0("SELECT * FROM ", input$tabla_sel, " LIMIT ", limite)
-              )
-            } else {
-              DBI::dbReadTable(con_activa(), input$tabla_sel)
-            }
-            list(ok = TRUE, df = df)
-          }, error = function(e2) {
-            list(ok = FALSE, msg = e2$message)
-          })
+          list(ok = FALSE, msg = e$message)
         })
 
         if (result$ok) {
