@@ -25,7 +25,8 @@ db_drivers <- function() {
 
 #' @keywords internal
 db_connect <- function(tipo, host, port, dbname, user, password, filepath = NULL,
-                       driver_name = NULL) {
+                       driver_name = NULL, oracle_service = NULL,
+                       oracle_conn_type = "service") {
   drivers <- db_drivers()
   cfg     <- drivers[[tipo]]
 
@@ -65,7 +66,18 @@ db_connect <- function(tipo, host, port, dbname, user, password, filepath = NULL
       ROracle::Oracle(),
       username = user,
       password = password,
-      dbname   = paste0(host, ":", port, "/", dbname)
+      dbname   = if (!is.null(oracle_service) && nchar(trimws(oracle_service)) > 0) {
+        svc <- trimws(oracle_service)
+        # Si ya es un TNS completo (empieza con paréntesis), usarlo directo
+        if (startsWith(svc, "(")) svc
+        # Si es SID
+        else if (!is.null(oracle_conn_type) && oracle_conn_type == "sid")
+          paste0(host, ":", port, ":", svc)
+        # Si es Service Name (default)
+        else paste0(host, ":", port, "/", svc)
+      } else {
+        paste0(host, ":", port)
+      }
     ),
     sqlite = DBI::dbConnect(
       RSQLite::SQLite(),
@@ -137,7 +149,7 @@ mod_db_ui <- function(id) {
         shiny::column(6,
           shiny::passwordInput(ns("password"), "Contrase\u00f1a"))
       ),
-      # Driver ODBC (solo SQL Server y DB2)
+    # Driver ODBC (solo SQL Server y DB2)
       shiny::conditionalPanel(
         condition = paste0(
           "input['", ns("tipo"), "'] == 'sqlserver' || ",
@@ -145,6 +157,22 @@ mod_db_ui <- function(id) {
         ),
         shiny::textInput(ns("driver_name"), "Driver ODBC (opcional)",
           placeholder = "dejar vac\u00edo para usar el predeterminado")
+      ),
+      # Service Name / SID (solo Oracle)
+      shiny::conditionalPanel(
+        condition = paste0("input['", ns("tipo"), "'] == 'oracle'"),
+        shiny::fluidRow(
+          shiny::column(8,
+            shiny::textInput(ns("oracle_service"), "Service Name / SID",
+              placeholder = "ej: ORCL, XE, inedb")),
+          shiny::column(4,
+            shiny::selectInput(ns("oracle_conn_type"), "Tipo",
+              choices = c("Service Name" = "service", "SID" = "sid"),
+              selected = "service"))
+        ),
+        shiny::div(class = "ds-hint",
+          "Si us\u00e1s TNS, pod\u00e9s pegar el string completo en Service Name:
+          ej: (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=...))...)")
       )
     ),
 
@@ -196,14 +224,16 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
                         input$sqlite_file$datapath else NULL
 
           con <- db_connect(
-            tipo        = input$tipo,
-            host        = input$host,
-            port        = input$port,
-            dbname      = input$dbname,
-            user        = input$user,
-            password    = input$password,
-            filepath    = filepath,
-            driver_name = input$driver_name
+            tipo             = input$tipo,
+            host             = input$host,
+            port             = input$port,
+            dbname           = input$dbname,
+            user             = input$user,
+            password         = input$password,
+            filepath         = filepath,
+            driver_name      = input$driver_name,
+            oracle_service   = input$oracle_service,
+            oracle_conn_type = input$oracle_conn_type
           )
           list(ok = TRUE, con = con)
         }, error = function(e) {
