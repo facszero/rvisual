@@ -48,26 +48,34 @@ op_to_code_line <- function(op) {
   )
 }
 
+# Helper: envolver nombres de columna en backticks si tienen espacios o puntos
+safe_col <- function(col) {
+  if (grepl("[^a-zA-Z0-9_]", col)) paste0("`", col, "`") else col
+}
+
 code_select <- function(p) {
-  as.character(glue::glue("dplyr::select({paste(p$cols, collapse=', ')})"))
+  cols <- paste(vapply(p$cols, safe_col, character(1)), collapse = ", ")
+  as.character(glue::glue("dplyr::select({cols})"))
 }
 
 code_filter <- function(p) {
   value_str <- format_value_for_code(p$value)
-  as.character(glue::glue("dplyr::filter({p$col} {p$op} {value_str})"))
+  col       <- safe_col(p$col)
+  as.character(glue::glue("dplyr::filter({col} {p$op} {value_str})"))
 }
 
 code_arrange <- function(p) {
-  if (p$desc) as.character(glue::glue("dplyr::arrange(dplyr::desc({p$col}))"))
-  else        as.character(glue::glue("dplyr::arrange({p$col})"))
+  col <- safe_col(p$col)
+  if (p$desc) as.character(glue::glue("dplyr::arrange(dplyr::desc({col}))"))
+  else        as.character(glue::glue("dplyr::arrange({col})"))
 }
 
 code_group_summarise <- function(p) {
-  group_str <- paste(p$group_cols, collapse = ", ")
+  group_str <- paste(vapply(p$group_cols, safe_col, character(1)), collapse = ", ")
   sum_exprs <- vapply(names(p$summary_fns), function(new_col) {
     fn_def  <- p$summary_fns[[new_col]]
     fn_name <- fn_def$fn
-    src_col <- fn_def$col
+    src_col <- if (!is.null(fn_def$col)) safe_col(fn_def$col) else NULL
     na_rm   <- fn_def$na_rm
     if (fn_name == "n" || is.null(src_col)) {
       as.character(glue::glue("{new_col} = dplyr::n()"))
@@ -77,13 +85,22 @@ code_group_summarise <- function(p) {
     }
   }, character(1))
   sum_str <- paste(sum_exprs, collapse = ",\n    ")
+  # group_by y summarise van en el mismo bloque sin pipe intermedio
   as.character(glue::glue(
     "dplyr::group_by({group_str}) |>\n  dplyr::summarise(\n    {sum_str},\n    .groups = 'drop'\n  )"
   ))
 }
 
-code_mutate  <- function(p) as.character(glue::glue("dplyr::mutate({p$new_col} = {p$expression})"))
-code_rename  <- function(p) as.character(glue::glue("dplyr::rename({p$new_name} = {p$old_name})"))
+code_mutate <- function(p) {
+  col <- safe_col(p$new_col)
+  as.character(glue::glue("dplyr::mutate({col} = {p$expression})"))
+}
+
+code_rename <- function(p) {
+  new <- safe_col(p$new_name)
+  old <- safe_col(p$old_name)
+  as.character(glue::glue("dplyr::rename({new} = {old})"))
+}
 
 code_recode <- function(p) {
   cases <- vapply(names(p$mapping), function(old_val) {
