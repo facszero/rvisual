@@ -31,7 +31,9 @@ Imports:
     glue (>= 1.6.0),
     rlang (>= 1.1.0),
     DBI (>= 1.1.0),
-    tools
+    tools,
+    stats,
+    utils
 Suggests:
     testthat (>= 3.0.0),
     knitr,

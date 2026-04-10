@@ -50,7 +50,7 @@ op_to_code_line <- function(op) {
 
 # Helper: envolver nombres de columna en backticks si tienen espacios o puntos
 safe_col <- function(col) {
-  if (grepl("[^a-zA-Z0-9_]", col)) paste0("`", col, "`") else col
+  if (grepl("^[0-9]|[^a-zA-Z0-9_]", col)) paste0("`", col, "`") else col
 }
 
 code_select <- function(p) {

@@ -405,3 +405,84 @@ test_that("load_file carga RDS correctamente", {
   expect_equal(nrow(df), 5)
   expect_equal(names(df), names(make_df()))
 })
+
+# ══════════════════════════════════════════════════════════════════════════
+# safe_col
+# ══════════════════════════════════════════════════════════════════════════
+test_that("safe_col no modifica nombres simples", {
+  expect_equal(safe_col("columna"),    "columna")
+  expect_equal(safe_col("col_123"),    "col_123")
+  expect_equal(safe_col("CODIGO"),     "CODIGO")
+  expect_equal(safe_col("col123"),     "col123")
+})
+
+test_that("safe_col agrega backticks a nombres con espacios", {
+  expect_equal(safe_col("col con espacio"), "`col con espacio`")
+  expect_equal(safe_col("Nro. INE"),        "`Nro. INE`")
+})
+
+test_that("safe_col agrega backticks a nombres con puntos", {
+  expect_equal(safe_col("col.punto"), "`col.punto`")
+})
+
+test_that("safe_col agrega backticks a nombres con guion", {
+  expect_equal(safe_col("col-guion"), "`col-guion`")
+})
+
+test_that("safe_col agrega backticks a nombres que empiezan con numero", {
+  expect_equal(safe_col("123col"),  "`123col`")
+  expect_equal(safe_col("1_dato"), "`1_dato`")
+})
+
+# ══════════════════════════════════════════════════════════════════════════
+# generate_code con columnas de nombres especiales
+# ══════════════════════════════════════════════════════════════════════════
+test_that("generate_code wraps columnas con espacios en backticks", {
+  ops  <- list(op_select(c("Nro. INE", "nombre")))
+  code <- generate_code("df", ops)
+  expect_true(grepl("`Nro. INE`", code))
+})
+
+test_that("generate_code group_summarise con columna especial", {
+  ops <- list(op_group_summarise(
+    group_cols   = c("Nro. INE"),
+    summary_fns  = list(total = list(fn = "n", col = NULL, na_rm = FALSE))
+  ))
+  code <- generate_code("df", ops)
+  expect_true(grepl("`Nro. INE`", code))
+  expect_true(grepl("dplyr::group_by", code))
+  expect_true(grepl("dplyr::summarise", code))
+})
+
+# ══════════════════════════════════════════════════════════════════════════
+# db_config_save / db_config_load
+# ══════════════════════════════════════════════════════════════════════════
+test_that("db_config_save y db_config_load son inversas", {
+  # Guardar config de prueba
+  db_config_save(
+    tipo   = "postgresql_test",
+    host   = "testhost",
+    port   = 5432,
+    dbname = "testdb",
+    user   = "testuser"
+  )
+  saved <- db_config_load("postgresql_test")
+  expect_equal(saved$host,   "testhost")
+  expect_equal(saved$user,   "testuser")
+  expect_equal(saved$dbname, "testdb")
+  # La contrasena nunca se guarda
+  expect_null(saved$password)
+})
+
+test_that("db_config_load retorna NULL para motor nunca configurado", {
+  result <- db_config_load("motor_inexistente_xyz_123")
+  expect_null(result)
+})
+
+test_that("db_config_save no guarda la contrasena", {
+  db_config_save("oracle_test", "host", 1521, "db", "user",
+                 oracle_service = "ORCL")
+  saved <- db_config_load("oracle_test")
+  expect_null(saved$password)
+  expect_equal(saved$oracle_service, "ORCL")
+})
