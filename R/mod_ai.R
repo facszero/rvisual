@@ -127,6 +127,12 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
         shiny::showNotification("Configur\u00e1 un proveedor IA primero.", type = "warning")
         return()
       }
+      if (is.null(cfg$api_key) || nchar(trimws(cfg$api_key)) == 0) {
+        shiny::showNotification(
+          "Falta la API key. Ingres\u00e1la en la pesta\u00f1a Configuraci\u00f3n.",
+          type = "warning", duration = 5)
+        return()
+      }
 
       prompt_text <- trimws(input$user_prompt)
 
