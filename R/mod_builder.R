@@ -62,21 +62,23 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 1. SELECCIONAR COLUMNAS
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Seleccion actual de columnas (reactiveVal para poder modificarla con los botones)
+    sel_cols_selected <- shiny::reactiveVal(character(0))
+
     shiny::observeEvent(input$op_select, {
       shiny::req(active_dataset())
+      sel_cols_selected(cols())  # por defecto todas seleccionadas
       shiny::showModal(shiny::modalDialog(
         title = "Seleccionar columnas",
         size  = "l",
-        # Barra de búsqueda + botones marcar/desmarcar
         shiny::div(class = "d-flex gap-2 mb-3 align-items-center",
           shiny::div(style = "flex:1;",
             shiny::textInput(ns("sel_search"), NULL,
-              placeholder = "Buscar columna...",
-              width = "100%")
+              placeholder = "Buscar columna...", width = "100%")
           ),
-          shiny::actionButton(ns("sel_all"),   "Marcar todas",
+          shiny::actionButton(ns("sel_all"),  "Marcar todas",
             class = "btn-sm btn-outline-secondary"),
-          shiny::actionButton(ns("sel_none"),  "Desmarcar todas",
+          shiny::actionButton(ns("sel_none"), "Desmarcar todas",
             class = "btn-sm btn-outline-secondary")
         ),
         shiny::div(style = "max-height:420px; overflow-y:auto;",
@@ -87,52 +89,45 @@ mod_builder_server <- function(id, active_dataset, active_name,
           shiny::actionButton(ns("confirm_select"), "Aplicar", class = "btn-primary")
         )
       ))
-      # Resetear búsqueda al abrir
       shiny::updateTextInput(session, "sel_search", value = "")
     })
 
-    # Renderizar checkboxes filtrados por búsqueda
-    output$sel_cols_ui <- shiny::renderUI({
-      todas <- cols()
-      busqueda <- if (!is.null(input$sel_search) && nchar(trimws(input$sel_search)) > 0)
-        trimws(input$sel_search) else ""
-      filtradas <- if (nchar(busqueda) > 0)
+    # Columnas filtradas por busqueda
+    cols_filtradas <- shiny::reactive({
+      todas    <- cols()
+      busqueda <- trimws(if (!is.null(input$sel_search)) input$sel_search else "")
+      if (nchar(busqueda) > 0)
         todas[grepl(busqueda, todas, ignore.case = TRUE)]
       else todas
-      shiny::checkboxGroupInput(ns("sel_cols"), NULL,
-        choices  = filtradas,
-        selected = if (!is.null(input$sel_cols)) intersect(input$sel_cols, filtradas) else filtradas)
     })
+
+    # Renderizar checkboxes — usa sel_cols_selected como fuente de verdad
+    output$sel_cols_ui <- shiny::renderUI({
+      shiny::checkboxGroupInput(ns("sel_cols"), NULL,
+        choices  = cols_filtradas(),
+        selected = intersect(sel_cols_selected(), cols_filtradas()))
+    })
+
+    # Sincronizar cambios manuales en los checkboxes al reactiveVal
+    shiny::observeEvent(input$sel_cols, {
+      # Actualizar solo las columnas visibles; preservar las no visibles
+      ocultas    <- setdiff(sel_cols_selected(), cols_filtradas())
+      sel_cols_selected(union(ocultas, input$sel_cols))
+    }, ignoreNULL = FALSE)
 
     # Marcar todas las visibles
     shiny::observeEvent(input$sel_all, {
-      todas <- cols()
-      busqueda <- if (!is.null(input$sel_search) && nchar(trimws(input$sel_search)) > 0)
-        trimws(input$sel_search) else ""
-      filtradas <- if (nchar(busqueda) > 0)
-        todas[grepl(busqueda, todas, ignore.case = TRUE)]
-      else todas
-      ya_sel <- if (!is.null(input$sel_cols)) input$sel_cols else character(0)
-      shiny::updateCheckboxGroupInput(session, "sel_cols",
-        selected = union(ya_sel, filtradas))
+      sel_cols_selected(union(sel_cols_selected(), cols_filtradas()))
     })
 
     # Desmarcar todas las visibles
     shiny::observeEvent(input$sel_none, {
-      todas <- cols()
-      busqueda <- if (!is.null(input$sel_search) && nchar(trimws(input$sel_search)) > 0)
-        trimws(input$sel_search) else ""
-      filtradas <- if (nchar(busqueda) > 0)
-        todas[grepl(busqueda, todas, ignore.case = TRUE)]
-      else todas
-      ya_sel <- if (!is.null(input$sel_cols)) input$sel_cols else character(0)
-      shiny::updateCheckboxGroupInput(session, "sel_cols",
-        selected = setdiff(ya_sel, filtradas))
+      sel_cols_selected(setdiff(sel_cols_selected(), cols_filtradas()))
     })
 
     shiny::observeEvent(input$confirm_select, {
-      shiny::req(input$sel_cols)
-      push_operation(operation_stack, history, op_select(input$sel_cols))
+      shiny::req(length(sel_cols_selected()) > 0)
+      push_operation(operation_stack, history, op_select(sel_cols_selected()))
       shiny::removeModal()
     })
 
