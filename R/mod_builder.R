@@ -62,12 +62,12 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 1. SELECCIONAR COLUMNAS
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    # Seleccion actual de columnas (reactiveVal para poder modificarla con los botones)
+    # Seleccion actual de columnas
     sel_cols_selected <- shiny::reactiveVal(character(0))
 
     shiny::observeEvent(input$op_select, {
       shiny::req(active_dataset())
-      sel_cols_selected(cols())  # por defecto todas seleccionadas
+      sel_cols_selected(cols())
       shiny::showModal(shiny::modalDialog(
         title = "Seleccionar columnas",
         size  = "l",
@@ -101,33 +101,52 @@ mod_builder_server <- function(id, active_dataset, active_name,
       else todas
     })
 
-    # Renderizar checkboxes — usa sel_cols_selected como fuente de verdad
+    # Al cambiar la busqueda: guardar seleccion visible actual antes de re-renderizar
+    shiny::observeEvent(input$sel_search, {
+      if (!is.null(input$sel_cols)) {
+        # Preservar: lo oculto que estaba seleccionado + lo visible actualmente marcado
+        ocultas_sel <- setdiff(sel_cols_selected(), cols_filtradas())
+        sel_cols_selected(union(ocultas_sel, input$sel_cols))
+      }
+    }, ignoreInit = TRUE)
+
+    # Renderizar checkboxes — sin observer sobre input$sel_cols para evitar loop
     output$sel_cols_ui <- shiny::renderUI({
       shiny::checkboxGroupInput(ns("sel_cols"), NULL,
         choices  = cols_filtradas(),
         selected = intersect(sel_cols_selected(), cols_filtradas()))
     })
 
-    # Sincronizar cambios manuales en los checkboxes al reactiveVal
-    shiny::observeEvent(input$sel_cols, {
-      # Actualizar solo las columnas visibles; preservar las no visibles
-      ocultas    <- setdiff(sel_cols_selected(), cols_filtradas())
-      sel_cols_selected(union(ocultas, input$sel_cols))
-    }, ignoreNULL = FALSE)
-
     # Marcar todas las visibles
     shiny::observeEvent(input$sel_all, {
-      sel_cols_selected(union(sel_cols_selected(), cols_filtradas()))
+      # Guardar estado manual actual antes de modificar
+      if (!is.null(input$sel_cols)) {
+        ocultas_sel <- setdiff(sel_cols_selected(), cols_filtradas())
+        sel_cols_selected(union(union(ocultas_sel, input$sel_cols), cols_filtradas()))
+      } else {
+        sel_cols_selected(union(sel_cols_selected(), cols_filtradas()))
+      }
     })
 
     # Desmarcar todas las visibles
     shiny::observeEvent(input$sel_none, {
-      sel_cols_selected(setdiff(sel_cols_selected(), cols_filtradas()))
+      if (!is.null(input$sel_cols)) {
+        ocultas_sel <- setdiff(sel_cols_selected(), cols_filtradas())
+        sel_cols_selected(ocultas_sel)
+      } else {
+        sel_cols_selected(setdiff(sel_cols_selected(), cols_filtradas()))
+      }
     })
 
     shiny::observeEvent(input$confirm_select, {
-      shiny::req(length(sel_cols_selected()) > 0)
-      push_operation(operation_stack, history, op_select(sel_cols_selected()))
+      # Combinar: lo visible actualmente marcado + lo oculto previamente seleccionado
+      visibles_sel <- if (!is.null(input$sel_cols)) input$sel_cols else character(0)
+      ocultas_sel  <- setdiff(sel_cols_selected(), cols_filtradas())
+      seleccion    <- union(ocultas_sel, visibles_sel)
+      # Mantener el orden original de las columnas
+      seleccion    <- intersect(cols(), seleccion)
+      shiny::req(length(seleccion) > 0)
+      push_operation(operation_stack, history, op_select(seleccion))
       shiny::removeModal()
     })
 
