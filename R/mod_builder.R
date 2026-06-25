@@ -208,16 +208,35 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 4. AGRUPAR Y RESUMIR
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    grp_cols_selected <- shiny::reactiveVal(character(0))
+    grp_cols_filter   <- shiny::reactiveVal(character(0))
+
     shiny::observeEvent(input$op_group, {
       shiny::req(active_dataset())
+      todas <- cols()
+      grp_cols_selected(character(0))  # ninguna seleccionada por defecto
+      grp_cols_filter(todas)
       shiny::showModal(shiny::modalDialog(
         title = "Agrupar y resumir",
         size  = "l",
         shiny::fluidRow(
           shiny::column(6,
             shiny::tags$strong("1. Columnas de agrupaci\u00f3n:"),
-            shiny::checkboxGroupInput(ns("group_cols"), NULL,
-              choices = cols())
+            # Buscador de columnas de agrupacion
+            shiny::div(class = "d-flex gap-2 my-2 align-items-center",
+              shiny::div(style = "flex:1;",
+                shiny::textInput(ns("grp_search"), NULL,
+                  placeholder = "Buscar columna...", width = "100%")
+              ),
+              shiny::actionButton(ns("grp_all"),  "Todas",
+                class = "btn-sm btn-outline-secondary"),
+              shiny::actionButton(ns("grp_none"), "Ninguna",
+                class = "btn-sm btn-outline-secondary")
+            ),
+            shiny::div(style = "max-height:320px; overflow-y:auto;",
+              shiny::checkboxGroupInput(ns("group_cols"), NULL,
+                choices = todas, selected = character(0))
+            )
           ),
           shiny::column(6,
             shiny::tags$strong("2. Calcular:"),
@@ -233,8 +252,45 @@ mod_builder_server <- function(id, active_dataset, active_name,
           shiny::actionButton(ns("confirm_group"), "Aplicar", class = "btn-primary")
         )
       ))
-      # Inicializar con 1 fila de resumen
       rv_group$n_rows <- 1
+      shiny::updateTextInput(session, "grp_search", value = "")
+    })
+
+    # Guardar cambios manuales en group_cols
+    shiny::observeEvent(input$group_cols, {
+      cf      <- grp_cols_filter()
+      hidden  <- setdiff(grp_cols_selected(), cf)
+      visible <- if (!is.null(input$group_cols)) input$group_cols else character(0)
+      grp_cols_selected(union(hidden, visible))
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+    # Filtrar columnas de agrupacion al buscar
+    shiny::observeEvent(input$grp_search, {
+      todas    <- cols()
+      busqueda <- trimws(if (!is.null(input$grp_search)) input$grp_search else "")
+      filtradas <- if (nchar(busqueda) > 0)
+        todas[grepl(busqueda, todas, ignore.case = TRUE)]
+      else todas
+      grp_cols_filter(filtradas)
+      shiny::updateCheckboxGroupInput(session, "group_cols",
+        choices  = filtradas,
+        selected = intersect(grp_cols_selected(), filtradas))
+    }, ignoreInit = TRUE)
+
+    # Marcar todas las visibles en agrupacion
+    shiny::observeEvent(input$grp_all, {
+      cf <- grp_cols_filter()
+      grp_cols_selected(union(grp_cols_selected(), cf))
+      shiny::updateCheckboxGroupInput(session, "group_cols",
+        choices = cf, selected = cf)
+    })
+
+    # Desmarcar todas las visibles en agrupacion
+    shiny::observeEvent(input$grp_none, {
+      cf <- grp_cols_filter()
+      grp_cols_selected(setdiff(grp_cols_selected(), cf))
+      shiny::updateCheckboxGroupInput(session, "group_cols",
+        choices = cf, selected = character(0))
     })
 
     rv_group <- shiny::reactiveValues(n_rows = 1)
@@ -260,7 +316,8 @@ mod_builder_server <- function(id, active_dataset, active_name,
     })
 
     shiny::observeEvent(input$confirm_group, {
-      shiny::req(input$group_cols)
+      seleccion <- intersect(cols(), grp_cols_selected())
+      shiny::req(length(seleccion) > 0)
       n <- rv_group$n_rows
       summary_fns <- list()
       for (i in seq_len(n)) {
@@ -278,7 +335,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
       }
       if (length(summary_fns) > 0) {
         push_operation(operation_stack, history,
-                       op_group_summarise(input$group_cols, summary_fns))
+                       op_group_summarise(seleccion, summary_fns))
       }
       shiny::removeModal()
     })
