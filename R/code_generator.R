@@ -92,8 +92,12 @@ code_group_summarise <- function(p) {
 }
 
 code_mutate <- function(p) {
-  col <- safe_col(p$new_col)
-  as.character(glue::glue("dplyr::mutate({col} = {p$expression})"))
+  # Normalizar comillas tipograficas a comillas ASCII rectas
+  expr <- p$expression
+  expr <- gsub("\u201c|\u201d", '"', expr)
+  expr <- gsub("\u2018|\u2019", "'", expr)
+  col  <- safe_col(p$new_col)
+  as.character(glue::glue("dplyr::mutate({col} = {expr})"))
 }
 
 code_rename <- function(p) {
