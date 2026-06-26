@@ -99,7 +99,7 @@ mod_dataset_ui <- function(id) {
 #   active_name     - reactiveVal(NULL)  para el nombre del dataset activo
 #   history         - reactiveVal(list())para el historial de sesi\u00f3n
 
-mod_dataset_server <- function(id, active_dataset, active_name, history) {
+mod_dataset_server <- function(id, active_dataset, active_name, history, operation_stack = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -244,14 +244,50 @@ mod_dataset_server <- function(id, active_dataset, active_name, history) {
       }))
     })
 
+    # Variable local para dataset pendiente de activar (esperando confirmacion)
+    dataset_pendiente <- shiny::reactiveVal(NULL)
+
     shiny::observeEvent(input$click_ds, {
       nm <- input$click_ds
-      if (nm %in% names(rv$datasets)) {
+      if (!nm %in% names(rv$datasets)) return()
+      # Si hay operaciones en el stack y el dataset es diferente al actual, pedir confirmacion
+      tiene_ops <- !is.null(operation_stack) && length(operation_stack()) > 0
+      es_distinto <- !isTRUE(rv$seleccionado == nm)
+      if (tiene_ops && es_distinto) {
+        dataset_pendiente(nm)
+        shiny::showModal(shiny::modalDialog(
+          title = "Cambiar dataset activo",
+          shiny::p(shiny::HTML(paste0(
+            "Tensés <strong>", length(operation_stack()),
+            " operación(es)</strong> sobre <strong>", rv$seleccionado, "</strong>.",
+            "<br>Si cambiás a <strong>", nm, "</strong> se perderán."
+          ))),
+          footer = shiny::tagList(
+            shiny::modalButton("Cancelar"),
+            shiny::actionButton(ns("confirm_cambio_ds"), "Cambiar igual",
+                                class = "btn-danger")
+          ),
+          easyClose = FALSE
+        ))
+      } else {
         rv$seleccionado <- nm
         active_dataset(rv$datasets[[nm]])
         active_name(nm)
         assign(nm, rv$datasets[[nm]], envir = .GlobalEnv)
       }
+    })
+
+    shiny::observeEvent(input$confirm_cambio_ds, {
+      nm <- dataset_pendiente()
+      shiny::req(!is.null(nm), nm %in% names(rv$datasets))
+      # Limpiar stack y activar nuevo dataset
+      if (!is.null(operation_stack)) operation_stack(list())
+      rv$seleccionado <- nm
+      active_dataset(rv$datasets[[nm]])
+      active_name(nm)
+      assign(nm, rv$datasets[[nm]], envir = .GlobalEnv)
+      dataset_pendiente(NULL)
+      shiny::removeModal()
     })
 
     shiny::observe({

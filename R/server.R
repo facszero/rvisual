@@ -33,10 +33,11 @@ rvisual_server <- function(input, output, session) {
 
   # -- M\u00f3dulos -----------------------------------------------------------
   mod_dataset_server(
-    id             = "dataset",
-    active_dataset = active_dataset,
-    active_name    = active_dataset_name,
-    history        = session_history
+    id              = "dataset",
+    active_dataset  = active_dataset,
+    active_name     = active_dataset_name,
+    history         = session_history,
+    operation_stack = operation_stack
   )
 
   mod_explorer_server(
