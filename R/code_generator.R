@@ -85,10 +85,17 @@ code_group_summarise <- function(p) {
     }
   }, character(1))
   sum_str <- paste(sum_exprs, collapse = ",\n    ")
-  # group_by y summarise van en el mismo bloque sin pipe intermedio
-  as.character(glue::glue(
-    "dplyr::group_by({group_str}) |>\n  dplyr::summarise(\n    {sum_str},\n    .groups = 'drop'\n  )"
-  ))
+  if (length(p$group_cols) > 0) {
+    # Con agrupacion: group_by |> summarise
+    as.character(glue::glue(
+      "dplyr::group_by({group_str}) |>\n  dplyr::summarise(\n    {sum_str},\n    .groups = 'drop'\n  )"
+    ))
+  } else {
+    # Sin agrupacion: solo summarise (agregacion global)
+    as.character(glue::glue(
+      "dplyr::summarise(\n    {sum_str}\n  )"
+    ))
+  }
 }
 
 code_mutate <- function(p) {

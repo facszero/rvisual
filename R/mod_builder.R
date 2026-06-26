@@ -317,7 +317,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
 
     shiny::observeEvent(input$confirm_group, {
       seleccion <- intersect(cols(), grp_cols_selected())
-      shiny::req(length(seleccion) > 0)
+      # seleccion puede ser vacío: summarise sin group_by es válido (agregación global)
       n <- rv_group$n_rows
       summary_fns <- list()
       for (i in seq_len(n)) {

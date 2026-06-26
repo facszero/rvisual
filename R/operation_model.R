@@ -64,8 +64,12 @@ op_arrange <- function(col, desc = FALSE) {
 #' @return Lista de operaci\u00f3n con type="group_summarise".
 #' @keywords internal
 op_group_summarise <- function(group_cols, summary_fns) {
+  label_grp <- if (length(group_cols) > 0)
+    glue::glue("Agrupar por: {paste(group_cols, collapse=', ')}")
+  else
+    "Resumir (sin agrupacion)"
   list(type = "group_summarise",
-       label = glue::glue("Agrupar por: {paste(group_cols, collapse=', ')}"),
+       label = label_grp,
        params = list(group_cols = group_cols, summary_fns = summary_fns),
        created_at = Sys.time())
 }
@@ -152,7 +156,10 @@ apply_single_operation <- function(df, op) {
     },
     "group_summarise" = {
       p      <- op$params
-      grp_df <- dplyr::group_by(df, dplyr::across(dplyr::all_of(p$group_cols)))
+      grp_df <- if (length(p$group_cols) > 0)
+        dplyr::group_by(df, dplyr::across(dplyr::all_of(p$group_cols)))
+      else
+        df
       exprs  <- lapply(names(p$summary_fns), function(new_col) {
         fn_def  <- p$summary_fns[[new_col]]
         fn_name <- fn_def$fn
