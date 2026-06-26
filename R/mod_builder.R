@@ -581,15 +581,34 @@ mod_builder_server <- function(id, active_dataset, active_name,
       }))
     })
 
+    # Observers para eliminar operaciones individuales
+    # Usamos local() para capturar el indice correctamente en el closure
+    # y evitamos once=TRUE que causaba eliminacion en cascada
+    op_to_remove <- shiny::reactiveVal(NULL)
+
     shiny::observe({
       ops <- operation_stack()
       lapply(seq_along(ops), function(i) {
-        shiny::observeEvent(input[[paste0("remove_op_", i)]], {
-          current <- operation_stack()
-          if (i <= length(current)) operation_stack(current[-i])
-        }, ignoreInit = TRUE, once = TRUE)
+        local({
+          idx <- i
+          btn_id <- paste0("remove_op_", idx)
+          shiny::observeEvent(input[[btn_id]], {
+            op_to_remove(list(idx = idx, ts = Sys.time()))
+          }, ignoreInit = TRUE)
+        })
       })
     })
+
+    shiny::observeEvent(op_to_remove(), {
+      info <- op_to_remove()
+      shiny::req(!is.null(info))
+      current <- operation_stack()
+      idx <- info$idx
+      if (idx >= 1 && idx <= length(current)) {
+        operation_stack(current[-idx])
+      }
+      op_to_remove(NULL)
+    }, ignoreNULL = TRUE)
 
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # VISTA PREVIA
