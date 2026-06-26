@@ -455,24 +455,99 @@ mod_builder_server <- function(id, active_dataset, active_name,
       ]
       shiny::showModal(shiny::modalDialog(
         title = "Unir tablas (join)",
+        size  = "m",
         shiny::selectInput(ns("join_right_df"), "Segundo dataset:",
           choices = dfs_disponibles),
         shiny::selectInput(ns("join_type"), "Tipo de join:",
           choices = c("Left join" = "left", "Inner join" = "inner",
                       "Right join" = "right", "Full join" = "full")),
-        shiny::textInput(ns("join_by"), "Columnas clave (separadas por coma):",
-          placeholder = "ej: id_producto, codigo"),
+        shiny::tags$hr(),
+        shiny::tags$strong("Columnas de union:"),
+        shiny::tags$p(shiny::tags$small(
+          "Podés especificar columnas con distinto nombre en cada tabla.",
+          class = "text-muted")),
+        shiny::fluidRow(
+          shiny::column(5,
+            shiny::selectInput(ns("join_col_left"), "Columna (tabla izquierda):",
+              choices = cols())
+          ),
+          shiny::column(2,
+            shiny::tags$div(style = "padding-top:32px; text-align:center;",
+              shiny::tags$strong("="))
+          ),
+          shiny::column(5,
+            shiny::selectInput(ns("join_col_right"), "Columna (tabla derecha):",
+              choices = character(0))
+          )
+        ),
+        shiny::uiOutput(ns("join_more_cols_ui")),
+        shiny::actionButton(ns("join_add_col"), shiny::icon("plus"),
+          label = " Agregar otra columna clave",
+          class = "btn-sm btn-outline-secondary mb-2"),
         footer = shiny::tagList(
           shiny::modalButton("Cancelar"),
           shiny::actionButton(ns("confirm_join"), "Aplicar", class = "btn-primary")
         )
       ))
+      rv_join$n_cols <- 1
     })
+
+    # Actualizar columnas del dataset derecho al cambiar la seleccion
+    shiny::observeEvent(input$join_right_df, {
+      shiny::req(input$join_right_df)
+      right_cols <- tryCatch(
+        names(get(input$join_right_df, envir = .GlobalEnv)),
+        error = function(e) character(0)
+      )
+      shiny::updateSelectInput(session, "join_col_right", choices = right_cols)
+    })
+
+    rv_join <- shiny::reactiveValues(n_cols = 1)
+
+    shiny::observeEvent(input$join_add_col, {
+      rv_join$n_cols <- rv_join$n_cols + 1
+    })
+
+    output$join_more_cols_ui <- shiny::renderUI({
+      n <- rv_join$n_cols
+      if (n <= 1) return(NULL)
+      right_cols <- tryCatch(
+        names(get(input$join_right_df, envir = .GlobalEnv)),
+        error = function(e) character(0)
+      )
+      shiny::tagList(lapply(2:n, function(i) {
+        shiny::fluidRow(
+          shiny::column(5,
+            shiny::selectInput(ns(paste0("join_col_left_", i)), NULL,
+              choices = cols())
+          ),
+          shiny::column(2,
+            shiny::tags$div(style = "padding-top:8px; text-align:center;",
+              shiny::tags$strong("="))
+          ),
+          shiny::column(5,
+            shiny::selectInput(ns(paste0("join_col_right_", i)), NULL,
+              choices = right_cols)
+          )
+        )
+      }))
+    })
+
     shiny::observeEvent(input$confirm_join, {
-      shiny::req(input$join_right_df, input$join_by)
-      by_cols <- trimws(strsplit(input$join_by, ",")[[1]])
+      shiny::req(input$join_right_df, input$join_col_left, input$join_col_right)
+      n <- rv_join$n_cols
+      # Construir vector named: c("col_izq" = "col_der")
+      by_left  <- c(input$join_col_left,
+        vapply(2:n, function(i) input[[paste0("join_col_left_",  i)]] %||% "", character(1)))
+      by_right <- c(input$join_col_right,
+        vapply(2:n, function(i) input[[paste0("join_col_right_", i)]] %||% "", character(1)))
+      # Eliminar pares vacios
+      valid <- nchar(by_left) > 0 & nchar(by_right) > 0
+      by_left  <- by_left[valid]
+      by_right <- by_right[valid]
+      names(by_left) <- by_right
       push_operation(operation_stack, history,
-                     op_join(input$join_right_df, by_cols, input$join_type))
+        op_join(input$join_right_df, by_left, input$join_type))
       shiny::removeModal()
     })
 

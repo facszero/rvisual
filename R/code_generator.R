@@ -127,8 +127,15 @@ code_recode <- function(p) {
 
 code_join <- function(p) {
   join_fn <- paste0("dplyr::", p$type, "_join")
-  by_str  <- if (length(p$by) == 1) paste0('"', p$by, '"')
-             else paste0('c(', paste(paste0('"', p$by, '"'), collapse = ', '), ')')
+  by      <- p$by
+  nms     <- names(by)
+  if (!is.null(nms) && any(nzchar(nms) & nms != by)) {
+    pairs  <- paste0('"', by, '" = "', nms, '"')
+    by_str <- paste0('c(', paste(pairs, collapse = ', '), ')')
+  } else {
+    by_str <- if (length(by) == 1) paste0('"', by, '"')
+              else paste0('c(', paste(paste0('"', by, '"'), collapse = ', '), ')')
+  }
   as.character(glue::glue("{join_fn}({p$right_df}, by = {by_str})"))
 }
 
