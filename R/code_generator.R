@@ -130,7 +130,8 @@ code_join <- function(p) {
   by      <- p$by
   nms     <- names(by)
   if (!is.null(nms) && any(nzchar(nms) & nms != by)) {
-    pairs  <- paste0('"', by, '" = "', nms, '"')
+    # dplyr: c("col_izquierda" = "col_derecha") -> name=izq, value=der
+    pairs  <- paste0('"', nms, '" = "', by, '"')
     by_str <- paste0('c(', paste(pairs, collapse = ', '), ')')
   } else {
     by_str <- if (length(by) == 1) paste0('"', by, '"')

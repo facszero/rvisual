@@ -541,13 +541,15 @@ mod_builder_server <- function(id, active_dataset, active_name,
         vapply(2:n, function(i) input[[paste0("join_col_left_",  i)]] %||% "", character(1)))
       by_right <- c(input$join_col_right,
         vapply(2:n, function(i) input[[paste0("join_col_right_", i)]] %||% "", character(1)))
-      # Eliminar pares vacios
       valid <- nchar(by_left) > 0 & nchar(by_right) > 0
       by_left  <- by_left[valid]
       by_right <- by_right[valid]
-      names(by_left) <- by_right
+      # dplyr: c("col_izquierda" = "col_derecha")
+      # name = columna del dataset izquierdo, value = columna del derecho
+      by_named <- by_right          # valores = columnas del dataset derecho
+      names(by_named) <- by_left    # nombres = columnas del dataset izquierdo
       push_operation(operation_stack, history,
-        op_join(input$join_right_df, by_left, input$join_type))
+        op_join(input$join_right_df, by_named, input$join_type))
       shiny::removeModal()
     })
 
