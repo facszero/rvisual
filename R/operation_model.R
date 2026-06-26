@@ -174,7 +174,24 @@ apply_single_operation <- function(df, op) {
       df
     },
     "rename"  = dplyr::rename(df, !!op$params$new_name := !!op$params$old_name),
-    "recode"  = df,  # aplicado v\u00eda code_generator
+    "recode"  = {
+      col     <- op$params$col
+      mapping <- op$params$mapping
+      vals    <- df[[col]]
+      result  <- as.character(vals)  # convertir a character para uniformidad
+      for (old_val in names(mapping)) {
+        new_val <- mapping[[old_val]]
+        # Comparar numerico si corresponde
+        if (!is.na(suppressWarnings(as.numeric(old_val))) &&
+            is.numeric(vals)) {
+          result[vals == as.numeric(old_val)] <- new_val
+        } else {
+          result[as.character(vals) == old_val] <- new_val
+        }
+      }
+      df[[col]] <- result
+      df
+    },
     "join" = {
       right_df <- get(op$params$right_df, envir = .GlobalEnv)
       join_fn  <- switch(op$params$type,
