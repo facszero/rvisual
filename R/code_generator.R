@@ -107,15 +107,21 @@ code_rename <- function(p) {
 }
 
 code_recode <- function(p) {
+  col   <- safe_col(p$col)
   cases <- vapply(names(p$mapping), function(old_val) {
     new_val <- p$mapping[[old_val]]
+    # Normalizar comillas tipograficas en valores nuevos
+    new_val <- gsub("\u201c|\u201d", '"', new_val)
+    new_val <- gsub("\u2018|\u2019", "'", new_val)
     as.character(glue::glue(
-      "{p$col} == {format_value_for_code(old_val)} ~ {format_value_for_code(new_val)}"
+      "{col} == {format_value_for_code(old_val)} ~ {format_value_for_code(new_val)}"
     ))
   }, character(1))
   cases_str <- paste(cases, collapse = ",\n      ")
+  # TRUE ~ as.character() evita error de tipo mixto en case_when
+  # cuando se mapea de numerico a texto
   as.character(glue::glue(
-    "dplyr::mutate({p$col} = dplyr::case_when(\n      {cases_str},\n      TRUE ~ {p$col}\n    ))"
+    "dplyr::mutate({col} = dplyr::case_when(\n      {cases_str},\n      TRUE ~ as.character({col})\n    ))"
   ))
 }
 
