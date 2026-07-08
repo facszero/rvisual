@@ -1,3 +1,25 @@
+# rvisual 0.1.1
+
+## Correcciones (Round 2 de pruebas)
+
+* **`summarise` sin `group_by`** — La operación "Agrupar y resumir" ahora
+  permite no seleccionar columnas de agrupación, calculando estadísticas
+  globales (ej: media de toda la columna). Antes se bloqueaba silenciosamente.
+
+* **Eliminación de operación intermedia** — Al eliminar una operación del
+  stack con el botón X, las operaciones siguientes ya no se eliminaban en
+  cascada. El bug era causado por `once = TRUE` en observers Shiny acumulados;
+  se reemplazó por un patrón `reactiveVal` centralizado.
+
+* **Cambio de dataset con operaciones activas** — Al cambiar el dataset activo
+  mientras hay operaciones en el Constructor, ahora se muestra un modal de
+  confirmación informando cuántas operaciones se perderán. Si el usuario
+  confirma, el stack se limpia y se activa el nuevo dataset.
+
+* **Código generado limpio para agregación global** — `code_group_summarise()`
+  ahora genera `dplyr::summarise()` sin `dplyr::group_by()` cuando no hay
+  columnas de agrupación, produciendo código más idiomático.
+
 # rvisual 0.1.0
 
 ## Primera versión pública

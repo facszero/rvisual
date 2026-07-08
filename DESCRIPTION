@@ -1,6 +1,6 @@
 Package: rvisual
 Title: Visual Data Analysis 'RStudio' 'Addin' with AI Copilot
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     person("Fernando", "Cañete", 
            email = "facs.zero@gmail.com", 
