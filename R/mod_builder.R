@@ -317,7 +317,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
 
     shiny::observeEvent(input$confirm_group, {
       seleccion <- intersect(cols(), grp_cols_selected())
-      # seleccion puede ser vacío: summarise sin group_by es válido (agregación global)
+      # seleccion puede ser vacio: summarise sin group_by es valido (agregacion global)
       n <- rv_group$n_rows
       summary_fns <- list()
       for (i in seq_len(n)) {
@@ -464,7 +464,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
         shiny::tags$hr(),
         shiny::tags$strong("Columnas de union:"),
         shiny::tags$p(shiny::tags$small(
-          "Podés especificar columnas con distinto nombre en cada tabla.",
+          "Pod?s especificar columnas con distinto nombre en cada tabla.",
           class = "text-muted")),
         shiny::fluidRow(
           shiny::column(5,

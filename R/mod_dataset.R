@@ -258,9 +258,9 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
         shiny::showModal(shiny::modalDialog(
           title = "Cambiar dataset activo",
           shiny::p(shiny::HTML(paste0(
-            "Tensés <strong>", length(operation_stack()),
-            " operación(es)</strong> sobre <strong>", rv$seleccionado, "</strong>.",
-            "<br>Si cambiás a <strong>", nm, "</strong> se perderán."
+            "Tenes <strong>", length(operation_stack()),
+            " operacion(es)</strong> sobre <strong>", rv$seleccionado, "</strong>.",
+            "<br>Si cambias a <strong>", nm, "</strong> se perder?n."
           ))),
           footer = shiny::tagList(
             shiny::modalButton("Cancelar"),
