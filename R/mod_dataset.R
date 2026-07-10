@@ -70,7 +70,7 @@ mod_dataset_ui <- function(id) {
           bslib::nav_panel(
             title = shiny::tagList(shiny::icon("database"), " Base de datos"),
             value = "bd",
-            shiny::div(style = "padding-top:10px;",
+            shiny::div(style = "padding-top:10px; overflow-y:auto; max-height:70vh;",
               mod_db_ui(ns("db"))
             )
           )
