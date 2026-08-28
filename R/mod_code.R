@@ -1,8 +1,11 @@
-#' M\u00f3dulo: Panel de C\u00f3digo R Generado
+#' Modulo: Panel de Codigo R Generado
 #'
-#' Muestra el c\u00f3digo R producido por el Constructor en tiempo real.
+#' Muestra el codigo R producido por el Constructor en tiempo real.
 #' Permite copiar, insertar en script, ejecutar, guardar como .R
 #' y exportar el resultado a CSV o Excel.
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con la UI del panel de codigo.
 
 # ── UI ────────────────────────────────────────────────────────────────────
 mod_code_ui <- function(id) {

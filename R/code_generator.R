@@ -1,13 +1,13 @@
-#' Generador de C\u00f3digo R
+#' Generador de Codigo R
 #'
-#' Convierte un stack de operaciones en c\u00f3digo R limpio usando tidyverse.
+#' Convierte un stack de operaciones en codigo R limpio usando tidyverse.
 #' Usa el pipe nativo \code{|>} disponible desde R 4.1.
 #'
 #' @name code_generator
 #' @keywords internal
 NULL
 
-#' Generar c\u00f3digo R desde un stack de operaciones
+#' Generar codigo R desde un stack de operaciones
 #'
 #' @param df_name Nombre del objeto R que contiene el dataset.
 #' @param ops Lista de operaciones generadas por las funciones \code{op_*}.
@@ -18,7 +18,7 @@ NULL
 #'   incluye el paso de carga correspondiente, de forma que el script sea
 #'   ejecutable de forma standalone (sin depender de que el addin este
 #'   activo ni de ningun entorno interno).
-#' @return String con c\u00f3digo R formateado y listo para ejecutar.
+#' @return String con codigo R formateado y listo para ejecutar.
 #' @keywords internal
 generate_code <- function(df_name, ops, assign_to = NULL, source = NULL) {
   load_step <- generate_load_step(df_name, source)

@@ -1,4 +1,7 @@
-#' M\u00f3dulo: Constructor Visual de Operaciones
+#' Modulo: Constructor Visual de Operaciones
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con la UI del constructor.
 
 # -- UI --------------------------------------------------------------------
 mod_builder_ui <- function(id) {

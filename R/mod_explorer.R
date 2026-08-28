@@ -1,11 +1,14 @@
-#' M\u00f3dulo: Explorador de datos
+#' Modulo: Explorador de datos
 #'
 #' Vista tabular interactiva del dataset activo.
 #' Incluye:
 #' - Tabla paginada con DT
 #' - Resumen de columnas con tipos detectados
-#' - Estad\u00edsticas r\u00e1pidas por variable
-#' - B\u00fasqueda de variables
+#' - Estadisticas rapidas por variable
+#' - Busqueda de variables
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con la UI del explorador.
 
 # -- UI --------------------------------------------------------------------
 mod_explorer_ui <- function(id) {

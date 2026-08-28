@@ -1,4 +1,4 @@
-#' M\u00f3dulo: Asistente IA Contextual
+#' Modulo: Asistente IA Contextual
 #'
 #' Panel de chat con agente IA multi-proveedor.
 #' El agente conoce:
@@ -7,7 +7,10 @@
 #'   - El stack de operaciones actual
 #'   - Opcionalmente, una muestra limitada de datos
 #'
-#' Modalidad segura: el agente propone c\u00f3digo y el usuario decide si ejecutarlo.
+#' Modalidad segura: el agente propone codigo y el usuario decide si ejecutarlo.
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con la UI del asistente IA.
 
 # -- UI --------------------------------------------------------------------
 mod_ai_ui <- function(id) {

@@ -1,9 +1,16 @@
-#' Capa de Integraci\u00f3n con IA
+#' Capa de Integracion con IA
 #'
 #' Usa curl directamente para mayor compatibilidad con proxies corporativos.
 
 # -- Interfaz com\u00fan --------------------------------------------------------
 
+#' Enviar prompt al proveedor de IA configurado
+#'
+#' @param cfg Lista de configuracion (provider, api_key, model, etc.).
+#' @param system_prompt Prompt de sistema (contexto/instrucciones).
+#' @param user_prompt Prompt del usuario.
+#' @return Lista con \code{text} (respuesta completa) y \code{code}
+#'   (bloque de codigo R extraido de la respuesta, si existe).
 #' @export
 ai_send <- function(cfg, system_prompt, user_prompt) {
   stopifnot(!is.null(cfg$provider), !is.null(cfg$api_key))
@@ -19,6 +26,10 @@ ai_send <- function(cfg, system_prompt, user_prompt) {
   list(text = response_text, code = code_block)
 }
 
+#' Probar la conexion con el proveedor de IA configurado
+#'
+#' @param cfg Lista de configuracion (provider, api_key, model, etc.).
+#' @return Lista con \code{success} (logical) y \code{message} (detalle).
 #' @export
 ai_test_connection <- function(cfg) {
   # Primero verificar conectividad b\u00e1sica a internet
@@ -160,6 +171,10 @@ provider_gemini <- function(cfg, system_prompt, user_prompt) {
 
 # -- Contexto y prompts ----------------------------------------------------
 
+#' Construir el prompt de sistema para el asistente IA
+#'
+#' @param ctx Lista de contexto construida por \code{build_ai_context()}.
+#' @return String con el prompt de sistema completo.
 #' @export
 build_system_prompt <- function(ctx) {
   ops_section <- if (length(ctx$ops) > 0)
@@ -186,6 +201,14 @@ build_system_prompt <- function(ctx) {
   )
 }
 
+#' Construir el contexto para el asistente IA a partir del dataset activo
+#'
+#' @param df Data.frame activo.
+#' @param df_name Nombre del dataset activo.
+#' @param ops Lista de operaciones ya aplicadas (stack del builder).
+#' @param include_rows Logical; si es TRUE incluye una muestra de filas
+#'   en el contexto enviado a la IA.
+#' @return Lista de contexto usada por \code{build_system_prompt()}.
 #' @export
 build_ai_context <- function(df, df_name, ops, include_rows = FALSE) {
   meta <- get_metadata(df, df_name)

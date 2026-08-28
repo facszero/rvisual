@@ -1,4 +1,4 @@
-#' Descubrimiento de datasets y extracci\u00f3n de metadatos
+#' Descubrimiento de datasets y extraccion de metadatos
 #'
 #' Funciones para detectar data.frames en el entorno global, extraer
 #' metadatos estructurados y cargar archivos de datos.
@@ -23,8 +23,8 @@ discover_datasets <- function() {
 
 #' Extraer metadatos de un data.frame
 #'
-#' Devuelve informaci\u00f3n sobre dimensiones y tipos de cada columna,
-#' \u00fatil para construir el contexto del Asistente IA y el panel Explorador.
+#' Devuelve informacion sobre dimensiones y tipos de cada columna,
+#' util para construir el contexto del Asistente IA y el panel Explorador.
 #'
 #' @param df Data.frame a analizar.
 #' @param name Nombre del objeto para display.
@@ -71,7 +71,7 @@ format_example_value <- function(col) {
 #' Cargar un archivo de datos
 #'
 #' @param path Ruta al archivo.
-#' @param extension Extensi\u00f3n sin punto: "csv", "xlsx", "rds", "sav".
+#' @param extension Extension sin punto: "csv", "xlsx", "rds", "sav".
 #' @return Data.frame o tibble con los datos cargados.
 #' @keywords internal
 load_file <- function(path, extension) {

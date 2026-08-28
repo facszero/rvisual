@@ -1,4 +1,4 @@
-#' M\u00f3dulo: Conexi\u00f3n a Base de Datos
+#' Modulo: Conexion a Base de Datos
 #'
 #' Permite conectarse a PostgreSQL, MySQL, SQL Server, Oracle, SQLite y DB2
 #' y cargar tablas como datasets activos en RVisual.
@@ -127,7 +127,11 @@ db_connect <- function(tipo, host, port, dbname, user, password, filepath = NULL
 
 # ── UI ────────────────────────────────────────────────────────────────────
 
-#' @param id ID del m\u00f3dulo Shiny.
+#' UI del modulo de conexion a base de datos
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con el formulario de conexion.
+#' @keywords internal
 mod_db_ui <- function(id) {
   ns <- shiny::NS(id)
 
@@ -217,10 +221,16 @@ mod_db_ui <- function(id) {
 
 # ── Server ────────────────────────────────────────────────────────────────
 
-#' @param id ID del m\u00f3dulo Shiny.
+#' Server del modulo de conexion a base de datos
+#'
+#' @param id ID del modulo Shiny.
 #' @param active_dataset reactiveVal para el data.frame activo.
 #' @param active_name reactiveVal para el nombre del dataset activo.
 #' @param datasets_rv reactiveValues con la lista de datasets cargados.
+#' @param active_source reactiveVal opcional con metadata de origen del
+#'   dataset activo (ver code_generator.R).
+#' @return NULL (efectos secundarios sobre los reactiveVal recibidos).
+#' @keywords internal
 mod_db_server <- function(id, active_dataset, active_name, datasets_rv, active_source = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns

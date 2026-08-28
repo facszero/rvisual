@@ -1,7 +1,10 @@
-#' M\u00f3dulo: Configuraci\u00f3n
+#' Modulo: Configuracion
 #'
-#' Pantalla de configuraci\u00f3n del addin.
+#' Pantalla de configuracion del addin.
 #' Permite gestionar proveedores IA, API keys, modelos y preferencias.
+#'
+#' @param id ID del modulo Shiny.
+#' @return Un objeto shiny.tag con la UI de configuracion.
 
 # -- UI --------------------------------------------------------------------
 mod_config_ui <- function(id) {

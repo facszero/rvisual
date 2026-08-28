@@ -1,10 +1,10 @@
 #' Server principal de RVisual
 #'
-#' Orquesta todos los m\u00f3dulos Shiny.
-#' El estado compartido entre m\u00f3dulos se gestiona a trav\u00e9s de `reactives`
+#' Orquesta todos los modulos Shiny.
+#' El estado compartido entre modulos se gestiona a traves de `reactives`
 #' pasados como argumentos - no mediante variables globales.
 #'
-#' @param input,output,session Par\u00e1metros est\u00e1ndar de Shiny server
+#' @param input,output,session Parametros estandar de Shiny server
 rvisual_server <- function(input, output, session) {
 
   # -- Estado global reactivo compartido entre m\u00f3dulos -------------------
