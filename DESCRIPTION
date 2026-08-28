@@ -23,6 +23,7 @@ Imports:
     shiny (>= 1.7.0),
     rstudioapi (>= 0.13),
     bslib (>= 0.5.0),
+    htmltools,
     DT (>= 0.28),
     dplyr (>= 1.1.0),
     readxl (>= 1.4.0),
