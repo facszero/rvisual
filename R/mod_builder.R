@@ -44,7 +44,8 @@ mod_builder_ui <- function(id) {
 
 # -- Server ----------------------------------------------------------------
 mod_builder_server <- function(id, active_dataset, active_name,
-                                operation_stack, generated_code, history) {
+                                operation_stack, generated_code, history,
+                                active_source = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -642,8 +643,9 @@ mod_builder_server <- function(id, active_dataset, active_name,
     shiny::observe({
       df_name <- active_name()
       ops     <- operation_stack()
+      src     <- if (!is.null(active_source)) active_source() else NULL
       shiny::req(df_name)
-      generated_code(generate_code(df_name, ops))
+      generated_code(generate_code(df_name, ops, source = src))
     })
 
   })

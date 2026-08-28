@@ -14,6 +14,12 @@ rvisual_server <- function(input, output, session) {
   # Nombre del dataset activo
   active_dataset_name <- shiny::reactiveVal(NULL)
 
+  # Metadatos de origen del dataset activo (archivo/BD/entorno), usados
+  # para regenerar el paso de carga en el codigo generado (ver
+  # code_generator.R::generate_load_step y la discusion CRAN sobre el
+  # NOTE de assignment a .GlobalEnv)
+  active_dataset_source <- shiny::reactiveVal(NULL)
+
   # Lista de operaciones construidas visualmente (ver operation_model.R)
   operation_stack <- shiny::reactiveVal(list())
 
@@ -37,7 +43,8 @@ rvisual_server <- function(input, output, session) {
     active_dataset  = active_dataset,
     active_name     = active_dataset_name,
     history         = session_history,
-    operation_stack = operation_stack
+    operation_stack = operation_stack,
+    active_source   = active_dataset_source
   )
 
   mod_explorer_server(
@@ -52,7 +59,8 @@ rvisual_server <- function(input, output, session) {
     active_name     = active_dataset_name,
     operation_stack = operation_stack,
     generated_code  = generated_code,
-    history         = session_history
+    history         = session_history,
+    active_source   = active_dataset_source
   )
 
   mod_code_server(

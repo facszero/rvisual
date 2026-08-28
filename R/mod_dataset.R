@@ -99,21 +99,32 @@ mod_dataset_ui <- function(id) {
 #   active_name     - reactiveVal(NULL)  para el nombre del dataset activo
 #   history         - reactiveVal(list())para el historial de sesi\u00f3n
 
-mod_dataset_server <- function(id, active_dataset, active_name, history, operation_stack = NULL) {
+mod_dataset_server <- function(id, active_dataset, active_name, history,
+                               operation_stack = NULL, active_source = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Estado local: lista de todos los datasets cargados en este panel
     rv <- shiny::reactiveValues(
       datasets     = list(),
+      sources      = list(),  # metadatos de origen por dataset (ver code_generator.R)
       seleccionado = NULL,
       msg_carga    = ""       # mensaje de resultado de carga
     )
+
+    # Propaga tanto el dataset activo como su fuente (para poder regenerar
+    # el "paso de carga" standalone en el codigo generado)
+    set_activo <- function(nm) {
+      active_dataset(rv$datasets[[nm]])
+      active_name(nm)
+      if (!is.null(active_source)) active_source(rv$sources[[nm]])
+    }
 
     # -- Inicializar modulo de conexion a BD ----------------------------------
     mod_db_server("db",
       active_dataset = active_dataset,
       active_name    = active_name,
+      active_source  = active_source,
       datasets_rv    = rv
     )
 
@@ -157,11 +168,20 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
       if (!is.null(df) && is.data.frame(df)) {
         df <- as.data.frame(df)
         rv$datasets[[nombre]] <- df
+        rv$sources[[nombre]]  <- list(
+          kind     = "archivo",
+          ext      = ext,
+          filename = arch$name,
+          sep      = input$csv_sep,
+          header   = input$csv_header,
+          encoding = input$csv_enc
+        )
         rv$seleccionado       <- nombre
-        active_dataset(df)
-        active_name(nombre)
-        # Exportar al entorno global para que el c\u00f3digo R generado funcione directamente
-        assign(nombre, df, envir = .GlobalEnv)
+        set_activo(nombre)
+        # Dataset disponible en el entorno interno de RVisual (no en
+        # .GlobalEnv) mientras dura la sesion; el codigo generado incluye
+        # su propio paso de carga y por eso funciona igual fuera del addin.
+        assign(nombre, df, envir = rvisual_env())
         history_log(history, "dataset_loaded",
                     list(name = nombre, nrow = nrow(df), ncol = ncol(df)))
         rv$msg_carga <- paste0("\u2714 '", nombre, "' cargado (",
@@ -204,10 +224,13 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
         shiny::observeEvent(input[[paste0("env_", nm)]], {
           df <- get(nm, envir = .GlobalEnv)
           rv$datasets[[nm]]  <- df
+          # Este dataset ya vivia en el entorno del usuario: no lo
+          # reescribimos ahi (evita pisar el objeto original), lo copiamos
+          # a nuestro entorno interno para trabajar sobre el en la sesion.
+          rv$sources[[nm]]   <- list(kind = "entorno")
           rv$seleccionado    <- nm
-          active_dataset(df)
-          active_name(nm)
-          assign(nm, df, envir = .GlobalEnv)
+          set_activo(nm)
+          assign(nm, df, envir = rvisual_env())
           history_log(history, "dataset_from_env", list(name = nm))
         }, ignoreInit = TRUE)
       })
@@ -271,9 +294,8 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
         ))
       } else {
         rv$seleccionado <- nm
-        active_dataset(rv$datasets[[nm]])
-        active_name(nm)
-        assign(nm, rv$datasets[[nm]], envir = .GlobalEnv)
+        set_activo(nm)
+        assign(nm, rv$datasets[[nm]], envir = rvisual_env())
       }
     })
 
@@ -283,9 +305,8 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
       # Limpiar stack y activar nuevo dataset
       if (!is.null(operation_stack)) operation_stack(list())
       rv$seleccionado <- nm
-      active_dataset(rv$datasets[[nm]])
-      active_name(nm)
-      assign(nm, rv$datasets[[nm]], envir = .GlobalEnv)
+      set_activo(nm)
+      assign(nm, rv$datasets[[nm]], envir = rvisual_env())
       dataset_pendiente(NULL)
       shiny::removeModal()
     })
@@ -294,15 +315,19 @@ mod_dataset_server <- function(id, active_dataset, active_name, history, operati
       lapply(names(rv$datasets), function(nm) {
         shiny::observeEvent(input[[paste0("rm_", nm)]], {
           rv$datasets[[nm]] <- NULL
+          rv$sources[[nm]]  <- NULL
+          if (exists(nm, envir = rvisual_env(), inherits = FALSE)) {
+            rm(list = nm, envir = rvisual_env())
+          }
           if (isTRUE(rv$seleccionado == nm)) {
             restantes       <- names(rv$datasets)
             rv$seleccionado <- if (length(restantes) > 0) restantes[1] else NULL
             if (!is.null(rv$seleccionado)) {
-              active_dataset(rv$datasets[[rv$seleccionado]])
-              active_name(rv$seleccionado)
+              set_activo(rv$seleccionado)
             } else {
               active_dataset(NULL)
               active_name(NULL)
+              if (!is.null(active_source)) active_source(NULL)
             }
           }
         }, ignoreInit = TRUE)

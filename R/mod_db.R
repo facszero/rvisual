@@ -221,12 +221,13 @@ mod_db_ui <- function(id) {
 #' @param active_dataset reactiveVal para el data.frame activo.
 #' @param active_name reactiveVal para el nombre del dataset activo.
 #' @param datasets_rv reactiveValues con la lista de datasets cargados.
-mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
+mod_db_server <- function(id, active_dataset, active_name, datasets_rv, active_source = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     con_activa  <- shiny::reactiveVal(NULL)   # conexi\u00f3n DBI activa
     tablas_list <- shiny::reactiveVal(NULL)   # vector de tablas disponibles
+    filepath_activa <- shiny::reactiveVal(NULL)  # ruta sqlite de la conexion activa (si aplica)
 
     # ── Actualizar puerto al cambiar motor + cargar config guardada ───────
     shiny::observeEvent(input$tipo, {
@@ -295,6 +296,7 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
 
         if (result$ok) {
           con_activa(result$con)
+          filepath_activa(filepath)
           tablas <- tryCatch(DBI::dbListTables(result$con), error = function(e) character(0))
           tablas_list(tablas)
           # Guardar config para la proxima vez (sin contrasena)
@@ -394,10 +396,31 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv) {
         if (result$ok) {
           df <- result$df
           datasets_rv$datasets[[nombre]] <- df
-          assign(nombre, df, envir = .GlobalEnv)
+          # Guardamos los metadatos de conexion (nunca la contrasena) para
+          # que el codigo generado pueda reconectarse de forma standalone
+          # (ver code_generator.R::generate_load_step).
+          datasets_rv$sources[[nombre]] <- list(
+            kind             = "db",
+            tipo             = input$tipo,
+            host             = input$host,
+            port             = input$port,
+            dbname           = input$dbname,
+            user             = input$user,
+            filepath         = filepath_activa(),
+            driver_name      = input$driver_name,
+            oracle_service   = input$oracle_service,
+            oracle_conn_type = input$oracle_conn_type,
+            tabla            = input$tabla_sel,
+            limite           = limite
+          )
+          # Dataset disponible en el entorno interno de RVisual, no en
+          # .GlobalEnv (evita el NOTE de R CMD check y no pisa objetos del
+          # usuario).
+          assign(nombre, df, envir = rvisual_env())
           datasets_rv$seleccionado <- nombre
           active_dataset(df)
           active_name(nombre)
+          if (!is.null(active_source)) active_source(datasets_rv$sources[[nombre]])
           output$msg_carga_tabla <- shiny::renderText(
             paste0("\u2713 Cargado: ", nrow(df), " filas x ", ncol(df), " columnas")
           )
