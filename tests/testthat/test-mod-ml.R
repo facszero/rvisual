@@ -147,6 +147,8 @@ test_that("sin dataset el panel lo indica", {
 })
 
 test_that("ayudantes de interfaz", {
+  expect_identical(ml_ui_format_number(c(30000, 45000)), c("30.000", "45.000"))
+  expect_identical(ml_ui_format_number(c(0.5, 0.75)), c("0,50", "0,75"))
   expect_identical(ml_ui_default_positive(table(c("Si", "No", "No"))), "Si")
   expect_identical(ml_ui_default_positive(table(c("A", "B", "B"))), "A")
   expect_identical(ml_ui_hp_id("ranger", "num.trees"), "hp_ranger_num_trees")

@@ -402,7 +402,7 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
         DT::datatable(tab, rownames = FALSE,
                       options = list(dom = "t", ordering = FALSE, pageLength = 20),
                       class = "table table-sm"),
-        columns = seq_along(metric_cols) + 1, digits = 3, dec.mark = ",")
+        columns = seq_along(metric_cols) + 1, digits = 3, mark = ".", dec.mark = ",")
     })
 
     output$folds_plot <- shiny::renderPlot({
@@ -413,11 +413,15 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       res$modelo <- factor(res$modelo, levels = r$comparison$modelo,
                            labels = vapply(r$comparison$modelo, ml_ui_engine_label, "",
                                            USE.NAMES = FALSE))
-      graphics::par(mar = c(4, 4, 2, 1))
+      ticks <- pretty(res[[metric]])
+      tick_labels <- ml_ui_format_number(ticks)
+      left <- max(4, 1.5 + max(nchar(tick_labels)) * 0.55)
+      graphics::par(mar = c(4, left, 2, 1))
       graphics::stripchart(res[[metric]] ~ res$modelo, vertical = TRUE, method = "jitter",
-                           pch = 19, col = "#2C6FAC80", las = 1,
-                           ylab = ml_ui_metric_labels(metric),
-                           main = paste0(ml_ui_metric_labels(metric), " por fold"))
+                           pch = 19, col = "#2C6FAC80", yaxt = "n", ylim = range(ticks),
+                           ylab = "", main = paste0(ml_ui_metric_labels(metric), " por fold"))
+      graphics::axis(2, at = ticks, labels = tick_labels, las = 1)
+      graphics::mtext(ml_ui_metric_labels(metric), side = 2, line = left - 1.2)
       graphics::points(seq_along(levels(res$modelo)),
                        tapply(res[[metric]], res$modelo, mean), pch = 3, cex = 2, lwd = 2)
     })
@@ -469,9 +473,9 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
           shiny::actionButton(ns("btn_console"), "Ejecutar en consola",
                               icon = shiny::icon("terminal"), class = "btn-outline-success"),
           shiny::downloadButton(ns("dl_model"), "Guardar modelo (.rds)",
-                                class = "btn-outline-secondary"),
+                                class = "btn-outline-primary"),
           shiny::downloadButton(ns("dl_script"), "Guardar script (.R)",
-                                class = "btn-outline-secondary"))
+                                class = "btn-outline-primary"))
       )
     })
 
@@ -479,7 +483,8 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       fr <- final_result()
       shiny::req(fr)
       m <- fr$result$final$metrics
-      m[] <- lapply(m, function(v) format(round(v, 3), nsmall = 3, decimal.mark = ","))
+      m[] <- lapply(m, function(v) format(round(v, 3), nsmall = 3, big.mark = ".",
+                                          decimal.mark = ","))
       names(m) <- ml_ui_metric_labels(names(m))
       m
     })
@@ -498,9 +503,16 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       fr <- final_result()
       shiny::req(fr)
       f <- fr$result$final
-      graphics::par(mar = c(4, 4, 2, 1))
-      graphics::plot(f$observed, f$predicted, pch = 19, col = "#2C6FAC80", las = 1,
-                     xlab = "Observado", ylab = "Predicho", main = "Observado vs. predicho (test)")
+      yt <- pretty(f$predicted)
+      xt <- pretty(f$observed)
+      left <- max(4, 1.5 + max(nchar(ml_ui_format_number(yt))) * 0.55)
+      graphics::par(mar = c(4, left, 2, 1))
+      graphics::plot(f$observed, f$predicted, pch = 19, col = "#2C6FAC80",
+                     xaxt = "n", yaxt = "n", xlab = "Observado", ylab = "",
+                     main = "Observado vs. predicho (test)")
+      graphics::axis(1, at = xt, labels = ml_ui_format_number(xt))
+      graphics::axis(2, at = yt, labels = ml_ui_format_number(yt), las = 1)
+      graphics::mtext("Predicho", side = 2, line = left - 1.2)
       graphics::abline(0, 1, lty = 2)
     })
 
@@ -580,6 +592,14 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
 }
 
 # -- Ayudantes de interfaz ----------------------------------------------------
+
+#' Formatear numeros para ejes y tablas (punto de miles, coma decimal)
+#' @param x Vector numerico.
+#' @return Character vector.
+#' @keywords internal
+ml_ui_format_number <- function(x) {
+  format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE, trim = TRUE)
+}
 
 #' Etiquetas de tarea para la interfaz
 #' @return Vector nombrado.
