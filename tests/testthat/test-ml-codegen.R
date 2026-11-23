@@ -193,12 +193,37 @@ test_that("dos ejecuciones con la misma semilla dan las mismas metricas", {
 
 test_that("xgboost: el script corre en las tres tareas", {
   skip_if_not_installed("xgboost")
-  spec <- ml_spec("mpg", c("wt", "hp"), task = "regression",
-                  models = list(ml_model("baseline"), ml_model("xgboost", list(nrounds = 20L))),
-                  folds = 3L)
-  expect_silent(run_generated(ml_generate_code(spec, "mtcars"), "mtcars", mtcars))
-  spec <- ml_spec("Species", c("Sepal.Length", "Petal.Length"), task = "multiclass",
-                  models = list(ml_model("xgboost", list(nrounds = 20L))), folds = 3L)
-  env <- run_generated(ml_generate_code(spec, "iris"), "iris", iris)
-  expect_identical(env$comparacion$modelo, "xgboost")
+  xgb <- function(...) ml_model("xgboost", list(nrounds = 20L, ...))
+
+  # Regresion
+  spec <- ml_spec("mpg", c("wt", "hp", "cyl"), task = "regression",
+                  models = list(ml_model("baseline"), xgb()), folds = 3L)
+  spec$final <- "xgboost"
+  r <- ml_run(spec, mtcars)
+  expect_true(r$ok, info = r$error)
+  expect_true(is.numeric(r$final$predicted))
+  expect_false(is.null(r$final$importance))
+
+  # Binaria (con predictores de texto -> matriz de disenio)
+  skip_if_not_installed("pROC")
+  set.seed(11)
+  d <- data.frame(edad = round(stats::runif(300, 18, 70)),
+                  sexo = sample(c("H", "M"), 300, TRUE))
+  d$y <- ifelse(stats::runif(300) < stats::plogis(-2 + 0.05 * d$edad), "Si", "No")
+  spec <- ml_spec("y", c("edad", "sexo"), task = "binary", positive = "Si",
+                  models = list(ml_model("baseline"), xgb()), folds = 3L)
+  spec$final <- "xgboost"
+  r <- ml_run(spec, d)
+  expect_true(r$ok, info = r$error)
+  expect_true(all(r$final$predicted >= 0 & r$final$predicted <= 1))
+  expect_setequal(r$final$importance$variable, c("edad", "sexo"))
+
+  # Multiclase: probabilidades n x K que suman 1
+  spec <- ml_spec("Species", setdiff(names(iris), "Species"), task = "multiclass",
+                  models = list(xgb()), folds = 3L)
+  spec$final <- "xgboost"
+  r <- ml_run(spec, iris)
+  expect_true(r$ok, info = r$error)
+  expect_identical(colnames(r$final$predicted), levels(iris$Species))
+  expect_equal(unname(rowSums(r$final$predicted)), rep(1, r$n_test), tolerance = 1e-5)
 })

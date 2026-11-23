@@ -1,3 +1,41 @@
+# rvisual (en desarrollo)
+
+## Nuevo panel: Modelado (Machine Learning)
+
+* Asistente de cinco pasos para aprendizaje supervisado sobre datos
+  tabulares: objetivo, diagnóstico, partición y modelos, comparación por
+  validación cruzada y modelo final. Regresión, clasificación binaria y
+  multiclase. Ver `vignette("modelado", package = "rvisual")`.
+* **Diagnóstico** con reglas explícitas: identificadores, alta
+  cardinalidad, NA, pocas filas, muchos términos, clases desbalanceadas,
+  muchos ceros, asimetría y **posible fuga de información** (las variables
+  con fuga se excluyen por defecto).
+* **Modelos:** línea base, regresión lineal y logística, elastic net
+  (`glmnet`), árbol (`rpart`), Random Forest (`ranger`) y gradient boosting
+  (`xgboost`, experimental). Los paquetes de ML están en `Suggests`: la
+  instalación de RVisual no cambia.
+* **Script reproducible:** todo el modelado se entrega como un script R
+  autocontenido (carga, operaciones del Constructor, partición, validación
+  cruzada y modelo final). Las métricas del panel son exactamente las que
+  produce el script.
+* El modelo final se puede enviar al panel Código R, ejecutar en la
+  consola o descargar (`.rds`), junto con el script (`.R`).
+
+## Datos de ejemplo
+
+* Nuevo juego de datos sintético `ech_sintetica` (2.213 personas, 17
+  variables) en `inst/extdata`, en CSV, Excel, RDS, SPSS y SQLite, más una
+  tabla de departamentos para probar uniones. Diccionario y ejercicios por
+  panel en `inst/extdata/LEEME.md`.
+
+## Correcciones
+
+* **Panel de base de datos:** elegir SQLite como motor cortaba la sesión
+  (`subscript out of bounds`).
+* **Panel de base de datos:** al cerrar la app aparecía el error
+  "Operation not allowed without an active reactive context" y una
+  conexión abierta quedaba sin cerrar.
+
 # rvisual 0.1.1
 
 ## Correcciones (Round 2 de pruebas)
