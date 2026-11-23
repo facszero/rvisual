@@ -1,6 +1,6 @@
 # rvisual (en desarrollo)
 
-## Nuevo panel: Modelado (Machine Learning)
+## Nuevo panel: Modelado (ML)
 
 * Asistente de cinco pasos para aprendizaje supervisado sobre datos
   tabulares: objetivo, diagnóstico, partición y modelos, comparación por

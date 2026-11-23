@@ -45,7 +45,10 @@ rvisual_ui <- function() {
 
     # -- Panel 3b: Modelado (Machine Learning) ------------------------------
     bslib::nav_panel(
-      title = shiny::tags$span(shiny::icon("brain"), " Modelado"),
+      title = shiny::tags$span(
+        shiny::icon("brain"), " Modelado (ML)",
+        title = "Machine Learning: modelos predictivos de regresi\u00f3n y clasificaci\u00f3n"
+      ),
       value = "panel_ml",
       mod_ml_ui("ml")
     ),

@@ -24,6 +24,8 @@ test_that("la UI del panel se construye y la app principal lo incluye", {
   for (step in paste0("step", 1:5)) expect_match(html, step, fixed = TRUE)
   app_html <- as.character(rvisual_ui())
   expect_match(app_html, "panel_ml", fixed = TRUE)
+  expect_match(app_html, "Modelado (ML)", fixed = TRUE)
+  expect_match(app_html, "title=\"Machine Learning: modelos predictivos", fixed = TRUE)
   for (p in c("panel_dataset", "panel_explorer", "panel_builder", "panel_code",
               "panel_ai", "panel_config")) {
     expect_match(app_html, p, fixed = TRUE)

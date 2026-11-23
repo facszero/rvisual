@@ -1,8 +1,8 @@
 ---
-title: "Modelado con RVisual"
+title: "Modelado (Machine Learning) con RVisual"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Modelado con RVisual}
+  %\VignetteIndexEntry{Modelado (Machine Learning) con RVisual}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-El panel **Modelado** guía un flujo de aprendizaje supervisado sobre datos tabulares: diagnosticar el dataset, comparar varios modelos con validación cruzada y entrenar el modelo elegido. Como el resto de RVisual, todo lo que se hace en el panel queda en un **script de R reproducible**, que corre fuera del addin.
+El panel **Modelado (ML)** guía un flujo de aprendizaje supervisado sobre datos tabulares: diagnosticar el dataset, comparar varios modelos con validación cruzada y entrenar el modelo elegido. Como el resto de RVisual, todo lo que se hace en el panel queda en un **script de R reproducible**, que corre fuera del addin.
 
 El panel no elige el modelo por el usuario. Muestra la comparación contra una línea base y explica cada advertencia; la decisión es del analista.
 

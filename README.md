@@ -20,7 +20,7 @@ RVisual es un addin para RStudio que permite a usuarios con experiencia en SPSS 
 * **Panel Dataset** — Carga archivos (CSV, Excel, RDS, SAV hasta 50 MB) y detecta data.frames en memoria. Incluye un juego de datos de ejemplo sintético (`inst/extdata`, ver `LEEME.md`)
 * **Explorador** — Vista tabular, tipos de variables, estadísticas rápidas
 * **Constructor Visual** — Filtros, selección, ordenamiento, agrupación, nuevas variables, recodificación y joins con mouse
-* **Modelado** — Asistente de Machine Learning (regresión y clasificación): diagnóstico del dataset, comparación de modelos con validación cruzada y modelo final, todo como script reproducible. Ver `vignette("modelado", package = "rvisual")`
+* **Modelado (ML)** — Asistente de Machine Learning (regresión y clasificación): diagnóstico del dataset, comparación de modelos con validación cruzada y modelo final, todo como script reproducible. Ver `vignette("modelado", package = "rvisual")`
 * **Panel de Código R** — Código generado en tiempo real, ejecutable con resultado inline
 * **Asistente IA** — Copiloto contextual multi-proveedor (Anthropic, OpenAI, Gemini)
 * **Configuración** — Gestión de API keys y preferencias de privacidad
@@ -102,7 +102,7 @@ rvisual/
 │   ├── mod_dataset.R        # Panel: Datos
 │   ├── mod_explorer.R       # Panel: Explorador
 │   ├── mod_builder.R        # Panel: Constructor visual
-│   ├── mod_ml.R             # Panel: Modelado (Machine Learning)
+│   ├── mod_ml.R             # Panel: Modelado (ML)
 │   ├── ml_spec.R            # Especificación del modelado y validación
 │   ├── ml_engines.R         # Catálogo de modelos
 │   ├── ml_diagnostics.R     # Diagnóstico del dataset

@@ -61,7 +61,7 @@ También se pueden descargar desde GitHub, en la carpeta `inst/extdata` del repo
 **Base de datos**
 - Conectarse a `ech_sintetica.sqlite` con el tipo SQLite y leer la tabla `personas` o `departamentos`.
 
-**Modelado**
+**Modelado (ML)**
 
 | Tarea | Objetivo | Predictores sugeridos | Qué debería mostrar el diagnóstico |
 | --- | --- | --- | --- |
