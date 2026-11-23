@@ -43,6 +43,13 @@ rvisual_ui <- function() {
       mod_builder_ui("builder")
     ),
 
+    # -- Panel 3b: Modelado (Machine Learning) ------------------------------
+    bslib::nav_panel(
+      title = shiny::tags$span(shiny::icon("brain"), " Modelado"),
+      value = "panel_ml",
+      mod_ml_ui("ml")
+    ),
+
     # -- Panel 4: C\u00f3digo R -------------------------------------------------
     bslib::nav_panel(
       title = shiny::tags$span(shiny::icon("code"), " C\u00f3digo R"),

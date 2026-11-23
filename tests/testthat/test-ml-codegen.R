@@ -38,6 +38,9 @@ test_that("ml_lit formatea literales como codigo R", {
   expect_identical(ml_lit(123L), "123L")
   expect_identical(ml_lit(0.25), "0.25")
   expect_identical(ml_lit(500), "500")
+  largo <- ml_lit(paste0("variable_", 1:12))
+  expect_match(largo, "^c\\(\n")
+  expect_identical(eval(parse(text = largo)), paste0("variable_", 1:12))
 })
 
 test_that("ml_args omite NULL y traduce nombres", {

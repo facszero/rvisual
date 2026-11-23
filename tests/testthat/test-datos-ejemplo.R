@@ -96,7 +96,16 @@ test_that("diagnostico binario: identificador, alta cardinalidad y fuga", {
                      "condicion_actividad"))
   expect_identical(d$task, "binary")
   expect_true(all(c("identifier", "high_cardinality", "leakage") %in% ids_of(d)))
-  expect_setequal(d$suggested$exclude, c("id_persona", "localidad"))
+  expect_setequal(d$suggested$exclude,
+                  c("id_persona", "localidad", "condicion_actividad"))
+})
+
+test_that("diagnostico binario: numericas que separan las clases (ingreso, horas)", {
+  d <- ml_diagnose(ech(), "ocupado",
+                   c("edad", "sexo", "anios_educ", "ingreso_laboral", "horas_trabajadas"),
+                   positive = "Si")
+  expect_setequal(d$suggested$exclude, c("ingreso_laboral", "horas_trabajadas"))
+  expect_false("edad" %in% d$suggested$exclude)
 })
 
 test_that("diagnostico de regresion sobre el ingreso: muchos ceros y NA", {

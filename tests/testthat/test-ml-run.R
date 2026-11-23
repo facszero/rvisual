@@ -40,6 +40,7 @@ test_that("coherencia: pantalla = script entregado ejecutado por separado", {
 test_that("el modelo final trae metricas, importancia y predicciones", {
   r <- ml_run(spec_mtcars(final = "rpart"), mtcars)
   expect_identical(r$final$engine, "rpart")
+  expect_s3_class(r$final$fit, "rpart")
   expect_true(all(c("rmse", "mae", "r2") %in% names(r$final$metrics)))
   expect_null(r$final$confusion)
   expect_identical(length(r$final$observed), length(r$final$predicted))

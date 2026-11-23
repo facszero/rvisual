@@ -60,7 +60,21 @@ ml_lit <- function(x) {
   if (is.character(x)) {
     q <- unname(vapply(x, function(s) encodeString(s, quote = "\""), character(1)))
     if (length(q) == 1) return(q)
-    return(paste0("c(", paste(q, collapse = ", "), ")"))
+    one_line <- paste0("c(", paste(q, collapse = ", "), ")")
+    if (nchar(one_line) <= 70) return(one_line)
+    lines <- character(0)
+    current <- ""
+    for (item in q) {
+      candidate <- if (nzchar(current)) paste0(current, ", ", item) else item
+      if (nchar(candidate) > 60 && nzchar(current)) {
+        lines <- c(lines, current)
+        current <- item
+      } else {
+        current <- candidate
+      }
+    }
+    lines <- c(lines, current)
+    return(paste0("c(\n  ", paste(lines, collapse = ",\n  "), "\n)"))
   }
   if (is.logical(x)) return(if (isTRUE(x)) "TRUE" else "FALSE")
   if (is.numeric(x) && x == round(x) && abs(x) < 1e9) {

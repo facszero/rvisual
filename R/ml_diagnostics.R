@@ -26,7 +26,8 @@ ml_diag_thresholds <- function() {
     na_warn           = 0.05,  # NA por columna: aviso
     na_drop           = 0.40,  # NA por columna: sugerir excluir
     max_levels        = 50,    # niveles de un factor
-    leak_cor          = 0.95,  # correlacion absoluta con el objetivo
+    leak_cor          = 0.95,  # correlacion absoluta con el objetivo (regresion)
+    leak_auc          = 0.99,  # AUC de un predictor numerico solo (binaria)
     leak_min_per_level = 5     # casos medios por nivel para evaluar pureza
   )
 }
@@ -255,7 +256,13 @@ ml_diagnose <- function(data, target, predictors, task = NULL, folds = 5L,
   for (v in kept) {
     x <- data[[v]]
     leak <- NULL
-    if (is.numeric(x) && !is.null(y_num)) {
+    if (is.numeric(x) && task == "binary") {
+      ok <- !is.na(x) & !is.na(y_num)
+      auc <- ml_single_auc(x[ok], y_num[ok])
+      if (!is.na(auc) && max(auc, 1 - auc) > th$leak_auc) {
+        leak <- paste0("por s\u00ed sola separa las clases (AUC ", num(max(auc, 1 - auc), 3), ")")
+      }
+    } else if (is.numeric(x) && task == "regression") {
       ok <- !is.na(x) & !is.na(y_num)
       if (sum(ok) > 2 && stats::sd(x[ok]) > 0 && stats::sd(y_num[ok]) > 0) {
         r <- stats::cor(x[ok], y_num[ok])
@@ -271,9 +278,10 @@ ml_diagnose <- function(data, target, predictors, task = NULL, folds = 5L,
       }
     }
     if (!is.null(leak)) {
+      exclude <- c(exclude, v)
       add(ml_finding("leakage", "critical",
-        paste0("'", v, "' predice el objetivo casi perfectamente: verificar que ese dato exista en el momento de predecir (posible fuga de informaci\u00f3n)."),
-        leak))
+        paste0("'", v, "' predice el objetivo casi perfectamente (posible fuga de informaci\u00f3n): se excluye por defecto. Incluirla solo si ese dato existe en el momento de predecir."),
+        leak, list(exclude = v)))
     }
   }
 
@@ -298,6 +306,19 @@ ml_diag_result <- function(task, profile, findings, engines, exclude, folds) {
   list(task = task, profile = profile, findings = findings,
        suggested = list(engines = unique(as.character(engines)),
                         exclude = exclude, folds = as.integer(folds)))
+}
+
+#' AUC de un predictor numerico aislado (Mann-Whitney)
+#' @param x Predictor numerico.
+#' @param y Indicador 0/1 de la clase positiva.
+#' @return AUC entre 0 y 1, o \code{NA} si no se puede calcular.
+#' @keywords internal
+ml_single_auc <- function(x, y) {
+  n1 <- sum(y == 1)
+  n0 <- sum(y == 0)
+  if (n1 == 0 || n0 == 0 || length(unique(x)) < 2) return(NA_real_)
+  r <- rank(x)
+  (sum(r[y == 1]) - n1 * (n1 + 1) / 2) / (n1 * n0)
 }
 
 #' Detectar columnas con aspecto de identificador

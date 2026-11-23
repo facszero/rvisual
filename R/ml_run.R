@@ -29,7 +29,7 @@ NULL
 #' @return Lista con \code{ok}, \code{error}, \code{warnings},
 #'   \code{comparison} (metricas medias por modelo), \code{cv_results}
 #'   (metricas por fold), \code{final} (\code{NULL} o lista con
-#'   \code{engine}, \code{metrics}, \code{confusion}, \code{importance},
+#'   \code{engine}, \code{fit}, \code{metrics}, \code{confusion}, \code{importance},
 #'   \code{observed}, \code{predicted}), \code{n_train}, \code{n_test},
 #'   \code{elapsed} (segundos), \code{output} y \code{code}.
 #' @keywords internal
@@ -91,6 +91,7 @@ ml_run <- function(spec, data, df_name = "datos_rvisual", ops = list(),
     predicted <- if (spec$task == "regression") env$pred_test else env$prob_test
     result$final <- list(
       engine     = spec$final,
+      fit        = env$ajuste_final,
       metrics    = env$metricas(observed, predicted),
       confusion  = ml_confusion(spec, env, observed, predicted),
       importance = ml_importance(spec$final, env$ajuste_final, spec$predictors),

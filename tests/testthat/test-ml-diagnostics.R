@@ -146,6 +146,14 @@ test_that("posible fuga: numerica muy correlacionada con el objetivo", {
   f <- finding(ml_diagnose(dat, "y", c("x1", "y_copia")), "leakage")
   expect_false(is.null(f))
   expect_match(f$message, "y_copia")
+  expect_true("y_copia" %in% ml_diagnose(dat, "y", c("x1", "y_copia"))$suggested$exclude)
+})
+
+test_that("ml_single_auc mide la separacion de un predictor aislado", {
+  expect_equal(ml_single_auc(c(1, 2, 3, 4), c(0, 0, 1, 1)), 1)
+  expect_equal(ml_single_auc(c(4, 3, 2, 1), c(0, 0, 1, 1)), 0)
+  expect_equal(ml_single_auc(c(1, 2, 1, 2), c(0, 0, 1, 1)), 0.5)
+  expect_true(is.na(ml_single_auc(c(1, 1, 1), c(0, 1, 1))))
 })
 
 test_that("posible fuga: categoria que determina la clase", {

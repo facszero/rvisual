@@ -23,7 +23,7 @@ del Constructor).}
 Lista con \code{ok}, \code{error}, \code{warnings},
 \code{comparison} (metricas medias por modelo), \code{cv_results}
 (metricas por fold), \code{final} (\code{NULL} o lista con
-\code{engine}, \code{metrics}, \code{confusion}, \code{importance},
+\code{engine}, \code{fit}, \code{metrics}, \code{confusion}, \code{importance},
 \code{observed}, \code{predicted}), \code{n_train}, \code{n_test},
 \code{elapsed} (segundos), \code{output} y \code{code}.
 }

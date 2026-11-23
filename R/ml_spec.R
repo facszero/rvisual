@@ -270,7 +270,8 @@ ml_spec_validate <- function(spec, data = NULL, check_packages = TRUE) {
       n_complete <- sum(stats::complete.cases(data[, cols, drop = FALSE]))
       if (identical(spec$na_action, "omit") && n_complete < nrow(data)) {
         warn(nrow(data) - n_complete, " filas con NA se eliminar\u00e1n (",
-             round(100 * (nrow(data) - n_complete) / nrow(data), 1), "%).")
+             format(round(100 * (nrow(data) - n_complete) / nrow(data), 1),
+                    nsmall = 1, decimal.mark = ","), "%).")
       }
       n_eff <- if (identical(spec$na_action, "omit")) n_complete else nrow(data)
       if (n_eff < 2 * spec$cv$folds) {

@@ -66,7 +66,9 @@ También se pueden descargar desde GitHub, en la carpeta `inst/extdata` del repo
 | Tarea | Objetivo | Predictores sugeridos | Qué debería mostrar el diagnóstico |
 | --- | --- | --- | --- |
 | Clasificación binaria | `ocupado` (positiva `Si`) | `edad`, `sexo`, `anios_educ`, `departamento` | Comparar con la línea base; AUC claramente mayor a 0,5 |
-| Misma tarea, a propósito mal planteada | `ocupado` | agregar `id_persona`, `localidad`, `condicion_actividad` | Identificador y alta cardinalidad excluidos; **posible fuga** por `condicion_actividad` |
+| Misma tarea, a propósito mal planteada | `ocupado` | agregar `id_persona`, `localidad`, `condicion_actividad`, `ingreso_laboral` | Identificador y alta cardinalidad excluidos; **posible fuga** por `condicion_actividad` e `ingreso_laboral` (también excluidas por defecto) |
 | Regresión | `ingreso_laboral` | `edad`, `sexo`, `anios_educ`, `horas_trabajadas` | **Muchos ceros** (los no ocupados) y filas sin objetivo |
 | Regresión sobre ocupados | `ingreso_laboral`, con el filtro `ocupado == "Si"` del Constructor | `anios_educ`, `horas_trabajadas`, `sexo`, `edad` | El modelo lineal supera claramente a la línea base |
 | Multiclase | `condicion_actividad` | `edad`, `sexo`, `anios_educ` | **Clases desbalanceadas** (`Desocupado` 6,4%) |
+
+Para pensar después de la clasificación binaria: si se deja `aporta_bps` entre los predictores, aparece primera en la importancia de variables. No es casualidad: en estos datos, aportar a la seguridad social implica estar ocupado. Es una fuga **parcial** que el diagnóstico no marca (quienes no aportan pueden estar ocupados o no), y la pregunta del analista es la misma: ¿ese dato estará disponible en el momento de predecir?

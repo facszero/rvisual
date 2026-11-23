@@ -63,6 +63,16 @@ rvisual_server <- function(input, output, session) {
     active_source   = active_dataset_source
   )
 
+  mod_ml_server(
+    id              = "ml",
+    active_dataset  = active_dataset,
+    active_name     = active_dataset_name,
+    active_source   = active_dataset_source,
+    operation_stack = operation_stack,   # solo lectura
+    generated_code  = generated_code,    # solo al pulsar "Enviar a Codigo R"
+    parent_session  = session
+  )
+
   mod_code_server(
     id             = "code",
     generated_code = generated_code,
