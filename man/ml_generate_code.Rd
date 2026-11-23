@@ -4,7 +4,14 @@
 \alias{ml_generate_code}
 \title{Generar el script R completo de un modelado}
 \usage{
-ml_generate_code(spec, df_name, ops = list(), source = NULL, timestamp = TRUE)
+ml_generate_code(
+  spec,
+  df_name,
+  ops = list(),
+  source = NULL,
+  timestamp = TRUE,
+  save_model = TRUE
+)
 }
 \arguments{
 \item{spec}{Especificacion valida (ver \code{ml_spec()}).}
@@ -18,6 +25,10 @@ ml_generate_code(spec, df_name, ops = list(), source = NULL, timestamp = TRUE)
 
 \item{timestamp}{Incluir fecha de generacion en la cabecera. Se
 desactiva en tests para obtener salidas deterministas.}
+
+\item{save_model}{Incluir el \code{saveRDS()} del modelo final. La
+ejecucion dentro del addin (\code{ml_run()}) lo desactiva para no
+escribir archivos.}
 }
 \value{
 String con el script.

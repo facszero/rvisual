@@ -27,10 +27,13 @@ NULL
 #'   \code{generate_load_step()}); \code{NULL} si se desconoce.
 #' @param timestamp Incluir fecha de generacion en la cabecera. Se
 #'   desactiva en tests para obtener salidas deterministas.
+#' @param save_model Incluir el \code{saveRDS()} del modelo final. La
+#'   ejecucion dentro del addin (\code{ml_run()}) lo desactiva para no
+#'   escribir archivos.
 #' @return String con el script.
 #' @keywords internal
 ml_generate_code <- function(spec, df_name, ops = list(), source = NULL,
-                             timestamp = TRUE) {
+                             timestamp = TRUE, save_model = TRUE) {
   engines <- vapply(spec$models, function(m) m$engine, character(1))
   sections <- c(
     ml_code_header(spec, df_name, timestamp),
@@ -42,7 +45,7 @@ ml_generate_code <- function(spec, df_name, ops = list(), source = NULL,
     ml_code_metrics(spec$task),
     ml_code_models(spec),
     ml_code_compare(spec),
-    ml_code_final(spec)
+    ml_code_final(spec, save_model)
   )
   paste(sections[nzchar(sections)], collapse = "\n\n")
 }
@@ -447,7 +450,7 @@ ml_code_compare <- function(spec) {
   ), collapse = "\n")
 }
 
-ml_code_final <- function(spec) {
+ml_code_final <- function(spec, save_model = TRUE) {
   engines <- vapply(spec$models, function(m) m$engine, character(1))
   final <- spec$final
   choice <- if (is.null(final)) {
@@ -488,7 +491,7 @@ ml_code_final <- function(spec) {
     "  ajuste_final <- modelos[[modelo_elegido]]$ajustar(entrenamiento_final)",
     "  # Evaluacion en test: una sola vez, despues de elegir",
     eval_lines,
-    "  saveRDS(ajuste_final, paste0(\"modelo_\", modelo_elegido, \".rds\"))",
+    if (save_model) "  saveRDS(ajuste_final, paste0(\"modelo_\", modelo_elegido, \".rds\"))",
     "}"
   ), collapse = "\n")
 }
