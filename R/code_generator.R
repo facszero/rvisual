@@ -62,7 +62,7 @@ generate_load_step <- function(df_name, source) {
 
     "archivo" = {
       ext <- tolower(source$ext %||% "")
-      ruta <- source$filename %||% paste0(df_name, ".", ext)
+      ruta <- ruta_para_codigo(source$filename %||% paste0(df_name, ".", ext))
       linea <- switch(ext,
         csv = as.character(glue::glue(
           '{df_name} <- read.csv("{ruta}", sep = "{source$sep %||% ","}", ',
@@ -116,7 +116,7 @@ generate_load_step <- function(df_name, source) {
           '  dbname = "{source$oracle_service %||% source$host}"\n'
         )),
         sqlite = as.character(glue::glue(
-          '  RSQLite::SQLite(),\n  dbname = "{source$filepath %||% ""}"\n'
+          '  RSQLite::SQLite(),\n  dbname = "{ruta_para_codigo(source$filepath %||% "")}"\n'
         )),
         db2 = as.character(glue::glue(
           "  odbc::odbc(),\n",
@@ -152,6 +152,20 @@ generate_load_step <- function(df_name, source) {
 
     NULL
   )
+}
+
+#' Preparar una ruta de archivo para escribirla dentro de un string R
+#'
+#' En Windows las rutas usan barras invertidas, que dentro de un string R
+#' se interpretan como secuencias de escape (\code{"C:\\Users"} contiene
+#' \code{\\U}): el script generado no se podria leer. Se usan barras
+#' normales, que R acepta en todos los sistemas operativos.
+#'
+#' @param ruta Ruta del archivo.
+#' @return La ruta con \code{/} como separador.
+#' @keywords internal
+ruta_para_codigo <- function(ruta) {
+  gsub("\\", "/", ruta, fixed = TRUE)
 }
 
 # Nota: %||% ya esta definido en ai_interface.R y se reutiliza aqui
