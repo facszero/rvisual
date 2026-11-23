@@ -204,7 +204,16 @@ test_that("xgboost: el script corre en las tres tareas", {
   expect_true(is.numeric(r$final$predicted))
   expect_false(is.null(r$final$importance))
 
-  # Binaria (con predictores de texto -> matriz de disenio)
+  # Multiclase: probabilidades n x K que suman 1 (no requiere pROC)
+  spec <- ml_spec("Species", setdiff(names(iris), "Species"), task = "multiclass",
+                  models = list(xgb()), folds = 3L)
+  spec$final <- "xgboost"
+  r <- ml_run(spec, iris)
+  expect_true(r$ok, info = r$error)
+  expect_identical(colnames(r$final$predicted), levels(iris$Species))
+  expect_equal(unname(rowSums(r$final$predicted)), rep(1, r$n_test), tolerance = 1e-5)
+
+  # Binaria (con predictores de texto -> matriz de disenio); AUC requiere pROC
   skip_if_not_installed("pROC")
   set.seed(11)
   d <- data.frame(edad = round(stats::runif(300, 18, 70)),
@@ -217,13 +226,4 @@ test_that("xgboost: el script corre en las tres tareas", {
   expect_true(r$ok, info = r$error)
   expect_true(all(r$final$predicted >= 0 & r$final$predicted <= 1))
   expect_setequal(r$final$importance$variable, c("edad", "sexo"))
-
-  # Multiclase: probabilidades n x K que suman 1
-  spec <- ml_spec("Species", setdiff(names(iris), "Species"), task = "multiclass",
-                  models = list(xgb()), folds = 3L)
-  spec$final <- "xgboost"
-  r <- ml_run(spec, iris)
-  expect_true(r$ok, info = r$error)
-  expect_identical(colnames(r$final$predicted), levels(iris$Species))
-  expect_equal(unname(rowSums(r$final$predicted)), rep(1, r$n_test), tolerance = 1e-5)
 })
