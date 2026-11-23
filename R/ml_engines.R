@@ -106,7 +106,7 @@ ml_engine_catalog <- function() {
     ),
     xgboost = list(
       id = "xgboost",
-      label = "Gradient boosting (xgboost, experimental)",
+      label = "Gradient boosting (xgboost)",
       package = "xgboost",
       tasks = ml_tasks(),
       params = list(

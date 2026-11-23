@@ -21,8 +21,8 @@ El panel usa paquetes que no se instalan con RVisual. Cada modelo indica en el p
 
 ```{r}
 install.packages(c("rpart", "ranger", "glmnet", "pROC"))
-# Opcional (experimental en esta versión):
-install.packages("xgboost")
+# Opcional:
+install.packages("xgboost")   # versión 3.2.1.1 o posterior
 ```
 
 | Modelo | Paquete | Regresión | Clasificación binaria | Multiclase |
@@ -33,7 +33,7 @@ install.packages("xgboost")
 | Elastic net | glmnet | ✓ | ✓ | ✓ |
 | Árbol de decisión | rpart | ✓ | ✓ | ✓ |
 | Random Forest | ranger | ✓ | ✓ | ✓ |
-| Gradient boosting (experimental) | xgboost | ✓ | ✓ | ✓ |
+| Gradient boosting | xgboost (>= 3.2.1.1) | ✓ | ✓ | ✓ |
 
 La curva ROC y la AUC de la clasificación binaria usan `pROC`.
 
@@ -140,5 +140,4 @@ predict(modelo, nuevos)
 - **Pesos de diseño.** Las métricas tratan cada fila por igual. En datos de encuestas con diseño complejo, las métricas sin ponderar pueden sobre o subestimar el error en la población, y un buen desempeño individual no garantiza buenas estimaciones de totales. La incorporación de pesos, estratos y métricas ponderadas está prevista para la fase 2.
 - **Validación temporal.** La validación cruzada es aleatoria. Para series mensuales (entrenar con meses anteriores y evaluar en el siguiente) se prevé una validación temporal en la fase 3.
 - **Modelo en dos etapas** para objetivos con muchos ceros: fase 2.
-- **xgboost** está marcado como experimental: su código generado todavía no se verificó contra una versión instalada del paquete.
 - La ejecución dentro del panel bloquea la interfaz mientras dura. Con datasets grandes (más de 100.000 filas) conviene usar **Ejecutar en consola**.

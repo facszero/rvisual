@@ -12,7 +12,7 @@
   con fuga se excluyen por defecto).
 * **Modelos:** línea base, regresión lineal y logística, elastic net
   (`glmnet`), árbol (`rpart`), Random Forest (`ranger`) y gradient boosting
-  (`xgboost`, experimental). Los paquetes de ML están en `Suggests`: la
+  (`xgboost` >= 3.2.1.1). Los paquetes de ML están en `Suggests`: la
   instalación de RVisual no cambia.
 * **Script reproducible:** todo el modelado se entrega como un script R
   autocontenido (carga, operaciones del Constructor, partición, validación
@@ -35,6 +35,10 @@
 * **Panel de base de datos:** al cerrar la app aparecía el error
   "Operation not allowed without an active reactive context" y una
   conexión abierta quedaba sin cerrar.
+* **Código generado en Windows:** las rutas con barras invertidas
+  (`C:\Users\...`) hacían que el script no se pudiera leer
+  ("'\U' used without hex digits"). Afectaba a los datasets cargados desde
+  SQLite.
 
 # rvisual 0.1.1
 
