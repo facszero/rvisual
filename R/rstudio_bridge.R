@@ -36,3 +36,15 @@ rstudio_run_in_console <- function(code) {
   if (rstudioapi::isAvailable()) rstudioapi::sendToConsole(code, execute = TRUE)
   else eval(parse(text = code), envir = .GlobalEnv)
 }
+
+#' Elegir una carpeta con el selector de RStudio
+#'
+#' @param path Carpeta inicial.
+#' @return Ruta elegida, \code{NULL} si el usuario cancela, o \code{NA} si
+#'   el selector de RStudio no esta disponible (fuera de RStudio).
+#' @keywords internal
+rvisual_select_directory <- function(path = getwd()) {
+  if (!rstudioapi::isAvailable() || !rstudioapi::hasFun("selectDirectory")) return(NA)
+  rstudioapi::selectDirectory(caption = "Directorio de trabajo", label = "Elegir",
+                              path = path)
+}

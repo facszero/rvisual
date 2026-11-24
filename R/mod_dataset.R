@@ -27,6 +27,7 @@ mod_dataset_ui <- function(id) {
             value = "archivo",
             shiny::div(style = "padding-top:10px;",
               shiny::div(id = ns("panel_carga"),
+                shiny::uiOutput(ns("wd_ui")),
                 shiny::fileInput(ns("archivo"),
                   label       = NULL,
                   accept      = c(".csv", ".xlsx", ".xls", ".rds", ".sav"),
@@ -147,6 +148,71 @@ mod_dataset_server <- function(id, active_dataset, active_name, history,
       active_source  = active_source,
       datasets_rv    = rv
     )
+
+    # -- Directorio de trabajo ------------------------------------------------
+    # El codigo generado carga los archivos por su nombre (el navegador no
+    # informa la carpeta de un archivo subido), asi que el script los busca
+    # en el directorio de trabajo de R. Este bloque lo muestra y permite
+    # cambiarlo; solo se cambia cuando el usuario lo pide.
+    wd <- shiny::reactiveVal(getwd())
+
+    output$wd_ui <- shiny::renderUI({
+      src <- if (!is.null(active_source)) active_source() else NULL
+      estado <- NULL
+      if (!is.null(src) && identical(src$kind, "archivo") && !is.null(src$filename)) {
+        esta <- file.exists(file.path(wd(), src$filename))
+        estado <- shiny::div(class = if (esta) "small text-success" else "small text-warning",
+          shiny::icon(if (esta) "circle-check" else "triangle-exclamation"), " ",
+          if (esta) paste0("'", src$filename, "' est\u00e1 en este directorio: el c\u00f3digo ",
+                           "generado lo va a encontrar.")
+          else paste0("'", src$filename, "' no est\u00e1 en este directorio: para ejecutar ",
+                      "el c\u00f3digo generado, eleg\u00ed la carpeta donde est\u00e1."))
+      }
+      shiny::div(class = "mb-2 p-2 border rounded", style = "background:#f8f9fa;",
+        shiny::div(class = "d-flex align-items-center gap-2",
+          shiny::div(style = "flex:1; min-width:0;",
+            shiny::div(class = "small text-muted", "Directorio de trabajo"),
+            shiny::div(class = "small", style = "word-break:break-all;",
+                       shiny::tags$code(wd()))),
+          shiny::actionButton(ns("btn_wd"), "Cambiar\u2026", icon = shiny::icon("folder-open"),
+                              class = "btn-sm btn-outline-secondary")),
+        estado)
+    })
+
+    cambiar_wd <- function(dir) {
+      if (is.null(dir) || !nzchar(dir)) return(invisible(FALSE))
+      if (!dir.exists(dir)) {
+        shiny::showNotification(paste0("No existe la carpeta '", dir, "'."), type = "error")
+        return(invisible(FALSE))
+      }
+      setwd(dir)
+      wd(getwd())
+      history_log(history, "working_dir", list(path = getwd()))
+      shiny::showNotification(paste0("Directorio de trabajo: ", getwd()),
+                              type = "message", duration = 4)
+      invisible(TRUE)
+    }
+
+    shiny::observeEvent(input$btn_wd, {
+      dir <- tryCatch(rvisual_select_directory(getwd()), error = function(e) NA)
+      if (identical(dir, NA)) {
+        # Sin el selector de carpetas de RStudio: escribir la ruta
+        shiny::showModal(shiny::modalDialog(
+          title = "Directorio de trabajo",
+          shiny::textInput(ns("wd_text"), "Carpeta", value = getwd(), width = "100%"),
+          shiny::p(class = "small text-muted",
+                   "Por ejemplo C:/R/R-4.5.3/library/rvisual/extdata/datos-ipc"),
+          footer = shiny::tagList(shiny::modalButton("Cancelar"),
+            shiny::actionButton(ns("confirm_wd"), "Aplicar", class = "btn-primary"))))
+      } else {
+        cambiar_wd(dir)
+      }
+    })
+
+    shiny::observeEvent(input$confirm_wd, {
+      ruta <- gsub("\\", "/", trimws(input$wd_text %||% ""), fixed = TRUE)
+      if (isTRUE(cambiar_wd(ruta))) shiny::removeModal()
+    })
 
     # -- Mensaje de carga -------------------------------------------------------
     output$msg_carga <- shiny::renderText({ rv$msg_carga })
