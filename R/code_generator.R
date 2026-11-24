@@ -22,6 +22,9 @@ NULL
 #' @keywords internal
 generate_code <- function(df_name, ops, assign_to = NULL, source = NULL) {
   load_step <- generate_load_step(df_name, source)
+  join_steps <- generate_join_load_steps(ops, df_name)
+  if (length(join_steps) > 0)
+    load_step <- paste(c(load_step, join_steps), collapse = "\n\n")
 
   body_code <- if (length(ops) == 0) {
     paste0("# Sin operaciones definidas sobre '", df_name, "'.")
@@ -281,7 +284,53 @@ code_join <- function(p) {
     by_str <- if (length(by) == 1) paste0('"', by, '"')
               else paste0('c(', paste(paste0('"', by, '"'), collapse = ', '), ')')
   }
-  as.character(glue::glue("{join_fn}({p$right_df}, by = {by_str})"))
+
+  # Tabla derecha: columnas elegidas y conversiones de clave
+  right <- p$right_df
+  if (!is.null(p$right_cols)) {
+    keep  <- unique(c(unname(by), p$right_cols))
+    right <- paste0(right, " |> dplyr::select(",
+                    paste(vapply(keep, safe_col, character(1)), collapse = ", "), ")")
+  }
+  right_cast <- code_join_casts(p$key_casts, "right")
+  if (!is.null(right_cast)) right <- paste0(right, " |> ", right_cast)
+
+  join_line <- as.character(glue::glue("{join_fn}({right}, by = {by_str})"))
+  left_cast <- code_join_casts(p$key_casts, "left")
+  if (is.null(left_cast)) join_line else paste0(left_cast, " |>\n  ", join_line)
+}
+
+# Linea dplyr::mutate() que convierte a numero las claves de un lado
+code_join_casts <- function(casts, side) {
+  cols <- unlist(lapply(casts, function(cs) if (identical(cs$side, side)) cs$col))
+  if (length(cols) == 0) return(NULL)
+  asig <- vapply(cols, function(cl) {
+    sc <- safe_col(cl)
+    paste0(sc, " = as.numeric(as.character(", sc, "))")
+  }, character(1))
+  paste0("dplyr::mutate(", paste(asig, collapse = ", "), ")")
+}
+
+#' Pasos de carga de los segundos datasets de los joins
+#'
+#' @param ops Lista de operaciones.
+#' @param df_name Nombre del dataset principal (no se repite su carga).
+#' @return Character vector con un paso de carga por dataset (sin
+#'   duplicados); vacio si ningun join registra el origen de su tabla.
+#' @keywords internal
+generate_join_load_steps <- function(ops, df_name = NULL) {
+  vistos <- character(0)
+  pasos  <- character(0)
+  for (op in ops) {
+    if (!identical(op$type, "join")) next
+    nm  <- op$params$right_df
+    src <- op$params$right_source
+    if (is.null(src) || nm %in% c(vistos, df_name)) next
+    paso <- generate_load_step(nm, src)
+    vistos <- c(vistos, nm)
+    if (!is.null(paso)) pasos <- c(pasos, paso)
+  }
+  pasos
 }
 
 format_value_for_code <- function(value) {
