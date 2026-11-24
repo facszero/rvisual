@@ -2,33 +2,20 @@
 % Please edit documentation in R/operation_model.R
 \name{op_select}
 \alias{op_select}
-\title{Motor de Operaciones Visuales — Modelo Interno}
+\title{Crear operacion: seleccionar columnas}
 \usage{
 op_select(cols)
 }
 \arguments{
-\item{cols}{Character vector de nombres de columnas a seleccionar}
+\item{cols}{Character vector con los nombres de columnas a conservar.}
+}
+\value{
+Lista de operacion con type="select".
 }
 \description{
-Define la representación estructurada intermedia de las operaciones
-que el usuario construye visualmente.
+Crear operacion: seleccionar columnas
 }
-\details{
-En lugar de concatenar texto, cada operación es un objeto R con
-campos tipados que permiten:
-\itemize{
-\item Generar código R limpio y reproducible
-\item Reconstruir la UI desde el estado
-\item Soportar historial y deshacer
-\item Exportar/importar flujos de trabajo
+\examples{
+op <- rvisual:::op_select(c("nombre", "edad", "ingreso"))
 }
-
-Estructura de una operación (lista R):
-\describe{
-\item{type}{Tipo de operación: select, filter, arrange, group_summarise, mutate, rename, recode, join}
-\item{label}{Descripción legible para mostrar en UI}
-\item{params}{Lista nombrada con parámetros específicos del tipo}
-\item{created_at}{Timestamp de creación}
-}
-Crear operación: select
-}
+\keyword{internal}

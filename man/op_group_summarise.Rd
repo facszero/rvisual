@@ -2,15 +2,20 @@
 % Please edit documentation in R/operation_model.R
 \name{op_group_summarise}
 \alias{op_group_summarise}
-\title{Crear operación: group_summarise}
+\title{Crear operacion: agrupar y resumir}
 \usage{
 op_group_summarise(group_cols, summary_fns)
 }
 \arguments{
-\item{group_cols}{Character vector de columnas de agrupación}
+\item{group_cols}{Character vector de columnas de agrupacion.}
 
-\item{summary_fns}{Lista nombrada: nombre_nueva_col = list(fn, col_origen)}
+\item{summary_fns}{Lista nombrada donde cada elemento define una
+funcion de resumen: \code{list(fn, col, na_rm)}.}
+}
+\value{
+Lista de operacion con type="group_summarise".
 }
 \description{
-Crear operación: group_summarise
+Crear operacion: agrupar y resumir
 }
+\keyword{internal}

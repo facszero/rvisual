@@ -2,13 +2,17 @@
 % Please edit documentation in R/config.R
 \name{mod_history_ui_inline}
 \alias{mod_history_ui_inline}
-\title{Renderizar historial como UI inline (para modal)}
+\title{Renderizar historial como tabla HTML (para modal)}
 \usage{
 mod_history_ui_inline(history_list)
 }
 \arguments{
-\item{history_list}{Lista de eventos del historial de sesión, generada por \code{history_log()}.}
+\item{history_list}{Lista de eventos del historial.}
+}
+\value{
+Objeto UI de Shiny.
 }
 \description{
-Renderizar historial como UI inline (para modal)
+Renderizar historial como tabla HTML (para modal)
 }
+\keyword{internal}

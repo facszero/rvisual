@@ -2,15 +2,19 @@
 % Please edit documentation in R/operation_model.R
 \name{op_mutate}
 \alias{op_mutate}
-\title{Crear operación: mutate (nueva variable)}
+\title{Crear operacion: nueva variable (mutate)}
 \usage{
 op_mutate(new_col, expression)
 }
 \arguments{
-\item{new_col}{Nombre de la nueva columna}
+\item{new_col}{Nombre de la nueva columna.}
 
-\item{expression}{Expresión como string (será validada antes de generar código)}
+\item{expression}{Expresion R como string (ej: "Precio * Cantidad").}
+}
+\value{
+Lista de operacion con type="mutate".
 }
 \description{
-Crear operación: mutate (nueva variable)
+Crear operacion: nueva variable (mutate)
 }
+\keyword{internal}

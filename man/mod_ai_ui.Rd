@@ -2,12 +2,15 @@
 % Please edit documentation in R/mod_ai.R
 \name{mod_ai_ui}
 \alias{mod_ai_ui}
-\title{Módulo: Asistente IA Contextual}
+\title{Modulo: Asistente IA Contextual}
 \usage{
 mod_ai_ui(id)
 }
 \arguments{
-\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+\item{id}{ID del modulo Shiny.}
+}
+\value{
+Un objeto shiny.tag con la UI del asistente IA.
 }
 \description{
 Panel de chat con agente IA multi-proveedor.
@@ -20,5 +23,5 @@ El agente conoce:
 }
 }
 \details{
-Modalidad segura: el agente propone código y el usuario decide si ejecutarlo.
+Modalidad segura: el agente propone codigo y el usuario decide si ejecutarlo.
 }

@@ -2,15 +2,17 @@
 % Please edit documentation in R/rstudio_bridge.R
 \name{rstudio_insert_code}
 \alias{rstudio_insert_code}
-\title{RStudio Bridge — integración con el IDE}
+\title{Insertar codigo en el script activo de RStudio}
 \usage{
 rstudio_insert_code(code)
 }
 \arguments{
-\item{code}{String con el código R a insertar}
+\item{code}{String con el codigo R a insertar en la posicion del cursor.}
+}
+\value{
+Invisiblemente \code{NULL}.
 }
 \description{
-Funciones para interactuar con RStudio desde el addin:
-insertar código, leer entorno, navegar entre archivos.
-Insertar código en el script activo de RStudio
+Insertar codigo en el script activo de RStudio
 }
+\keyword{internal}

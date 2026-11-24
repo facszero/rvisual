@@ -11,7 +11,7 @@
 #' @param user_prompt Prompt del usuario.
 #' @return Lista con \code{text} (respuesta completa) y \code{code}
 #'   (bloque de codigo R extraido de la respuesta, si existe).
-#' @export
+#' @keywords internal
 ai_send <- function(cfg, system_prompt, user_prompt) {
   stopifnot(!is.null(cfg$provider), !is.null(cfg$api_key))
 
@@ -30,7 +30,7 @@ ai_send <- function(cfg, system_prompt, user_prompt) {
 #'
 #' @param cfg Lista de configuracion (provider, api_key, model, etc.).
 #' @return Lista con \code{success} (logical) y \code{message} (detalle).
-#' @export
+#' @keywords internal
 ai_test_connection <- function(cfg) {
   # Primero verificar conectividad b\u00e1sica a internet
   internet_ok <- tryCatch({
@@ -175,7 +175,7 @@ provider_gemini <- function(cfg, system_prompt, user_prompt) {
 #'
 #' @param ctx Lista de contexto construida por \code{build_ai_context()}.
 #' @return String con el prompt de sistema completo.
-#' @export
+#' @keywords internal
 build_system_prompt <- function(ctx) {
   ops_section <- if (length(ctx$ops) > 0)
     paste0("OPERACIONES YA APLICADAS:\n", ctx$ops_text, "\n\n") else ""
@@ -209,7 +209,7 @@ build_system_prompt <- function(ctx) {
 #' @param include_rows Logical; si es TRUE incluye una muestra de filas
 #'   en el contexto enviado a la IA.
 #' @return Lista de contexto usada por \code{build_system_prompt()}.
-#' @export
+#' @keywords internal
 build_ai_context <- function(df, df_name, ops, include_rows = FALSE) {
   meta <- get_metadata(df, df_name)
   schema_lines <- apply(meta$columns, 1, function(row) {

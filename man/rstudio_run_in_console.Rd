@@ -2,13 +2,17 @@
 % Please edit documentation in R/rstudio_bridge.R
 \name{rstudio_run_in_console}
 \alias{rstudio_run_in_console}
-\title{Ejecutar código en la consola de RStudio}
+\title{Ejecutar codigo en la consola de RStudio}
 \usage{
 rstudio_run_in_console(code)
 }
 \arguments{
-\item{code}{String con el código R a ejecutar en la consola de RStudio.}
+\item{code}{String con el codigo R a ejecutar.}
+}
+\value{
+Invisiblemente \code{NULL}.
 }
 \description{
-Ejecutar código en la consola de RStudio
+Ejecutar codigo en la consola de RStudio
 }
+\keyword{internal}

@@ -2,15 +2,19 @@
 % Please edit documentation in R/operation_model.R
 \name{op_arrange}
 \alias{op_arrange}
-\title{Crear operación: arrange}
+\title{Crear operacion: ordenar}
 \usage{
 op_arrange(col, desc = FALSE)
 }
 \arguments{
-\item{col}{Nombre de columna}
+\item{col}{Nombre de la columna por la que ordenar.}
 
-\item{desc}{Lógico: TRUE = descendente}
+\item{desc}{Logico. Si \code{TRUE} ordena de forma descendente.}
+}
+\value{
+Lista de operacion con type="arrange".
 }
 \description{
-Crear operación: arrange
+Crear operacion: ordenar
 }
+\keyword{internal}

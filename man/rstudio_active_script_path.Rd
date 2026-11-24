@@ -6,6 +6,10 @@
 \usage{
 rstudio_active_script_path()
 }
+\value{
+String con la ruta del documento activo, o \code{NULL}.
+}
 \description{
 Obtener el path del script activo en RStudio
 }
+\keyword{internal}

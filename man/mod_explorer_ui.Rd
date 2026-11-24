@@ -2,12 +2,15 @@
 % Please edit documentation in R/mod_explorer.R
 \name{mod_explorer_ui}
 \alias{mod_explorer_ui}
-\title{Módulo: Explorador de datos}
+\title{Modulo: Explorador de datos}
 \usage{
 mod_explorer_ui(id)
 }
 \arguments{
-\item{id}{ID del módulo Shiny (string). Usado por \code{NS()} para crear el namespace del módulo.}
+\item{id}{ID del modulo Shiny.}
+}
+\value{
+Un objeto shiny.tag con la UI del explorador.
 }
 \description{
 Vista tabular interactiva del dataset activo.
@@ -15,7 +18,7 @@ Incluye:
 \itemize{
 \item Tabla paginada con DT
 \item Resumen de columnas con tipos detectados
-\item Estadísticas rápidas por variable
-\item Búsqueda de variables
+\item Estadisticas rapidas por variable
+\item Busqueda de variables
 }
 }

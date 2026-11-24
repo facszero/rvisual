@@ -2,15 +2,23 @@
 % Please edit documentation in R/ai_interface.R
 \name{ai_send}
 \alias{ai_send}
-\title{Capa de Integración con IA}
+\title{Capa de Integracion con IA}
 \usage{
 ai_send(cfg, system_prompt, user_prompt)
 }
 \arguments{
-\item{cfg}{Lista de configuración del proveedor IA: \code{provider}, \code{model}, \code{api_key}.}
-\item{system_prompt}{String con el prompt de sistema (contexto del dataset activo).}
-\item{user_prompt}{String con el mensaje del usuario.}
+\item{cfg}{Lista de configuracion (provider, api_key, model, etc.).}
+
+\item{system_prompt}{Prompt de sistema (contexto/instrucciones).}
+
+\item{user_prompt}{Prompt del usuario.}
+}
+\value{
+Lista con \code{text} (respuesta completa) y \code{code}
+(bloque de codigo R extraido de la respuesta, si existe).
 }
 \description{
 Usa curl directamente para mayor compatibilidad con proxies corporativos.
+Enviar prompt al proveedor de IA configurado
 }
+\keyword{internal}
