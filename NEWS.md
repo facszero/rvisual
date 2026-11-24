@@ -38,6 +38,11 @@
 
 ## Correcciones
 
+* **Filtrar y recodificar texto que parece número:** un filtro como
+  `DIVISION == "01"` se escribía como `DIVISION == 01` y no devolvía
+  filas (lo mismo con variedades, productos y cualquier código con ceros a
+  la izquierda). Ahora el tipo de la columna decide si el valor va entre
+  comillas, en la vista previa y en el código generado.
 * **Unir tablas (join):** el diálogo solo ofrecía los data.frames del
   entorno global de R, así que un dataset cargado en RVisual no se podía
   usar como segunda tabla. Ahora aparecen los dos grupos. Además:

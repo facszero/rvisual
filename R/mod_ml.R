@@ -693,7 +693,9 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       col <- input$apply_f_col %||% ""
       val <- trimws(input$apply_f_val %||% "")
       if (!nzchar(col) || !nzchar(val)) return(NULL)
-      op_filter(col, input$apply_f_op, val)
+      base <- apply_base()
+      numeric <- if (is.data.frame(base) && col %in% names(base)) is.numeric(base[[col]]) else NULL
+      op_filter(col, input$apply_f_op, val, numeric = numeric)
     })
 
     output$apply_count <- shiny::renderUI({

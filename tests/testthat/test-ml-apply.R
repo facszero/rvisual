@@ -186,3 +186,16 @@ test_that("el panel Dataset recibe datasets creados por otros modulos", {
   expect_match(generate_load_step("tj_creado", list(kind = "modelo_ml")),
                "Modelado (ML)", fixed = TRUE)
 })
+
+test_that("el filtro del paso 6 respeta columnas de texto como '01'", {
+  autos <- autos_base()
+  autos$grupo <- ifelse(autos$cyl == 4, "01", "02")
+  s <- spec_reg()
+  r <- ml_run(s, autos, df_name = "autos")
+  s$apply <- ml_apply_spec("autos", filter = op_filter("grupo", "==", "01", numeric = FALSE),
+                           output = "res")
+  a <- ml_run_apply(r, s, "autos")
+  expect_true(a$ok)
+  expect_identical(a$n, sum(autos$grupo == "01"))
+  expect_match(ml_code_apply(s, "autos"), 'dplyr::filter(grupo == "01")', fixed = TRUE)
+})
