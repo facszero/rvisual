@@ -247,4 +247,11 @@ extract_r_code_block <- function(text) {
 }
 
 # -- null-coalesce ---------------------------------------------------------
-`%||%` <- function(a, b) if (!is.null(a) && nchar(as.character(a)) > 0) a else b
+# Valor por defecto si 'a' es NULL, vacio o un texto vacio (""). Admite
+# vectores de cualquier largo: con un largo > 1 devuelve 'a' (antes fallaba
+# en el && con "length = 2 in coercion to logical(1)").
+`%||%` <- function(a, b) {
+  if (is.null(a) || length(a) == 0) return(b)
+  if (length(a) == 1 && !is.na(a) && !nzchar(as.character(a))) return(b)
+  a
+}

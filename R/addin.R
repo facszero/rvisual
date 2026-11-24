@@ -44,8 +44,10 @@ launch_rvisual <- function(browser = FALSE,
                            width  = getOption("rvisual.width", 1400),
                            height = getOption("rvisual.height", 900)) {
 
-  # Subir l\u00edmite de upload a 50 MB
-  options(shiny.maxRequestSize = 50 * 1024^2)
+  # Subir l\u00edmite de upload a 50 MB mientras la app esta abierta; al
+  # cerrarla se restaura el valor que tenia el usuario (politica de CRAN)
+  old <- options(shiny.maxRequestSize = 50 * 1024^2)
+  on.exit(options(old), add = TRUE)
 
   ui     <- rvisual_ui()
   server <- rvisual_server

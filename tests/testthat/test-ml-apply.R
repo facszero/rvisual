@@ -89,6 +89,7 @@ test_that("categoria nueva y NA: sin prediccion, o imputados con la referencia",
 })
 
 test_that("clasificacion binaria y multiclase agregan probabilidades y clase", {
+  skip_if_not_installed("pROC")   # metricas de la clasificacion binaria
   autos <- autos_base()
   autos$am_f <- ifelse(autos$am == 1, "si", "no")
   sb <- ml_spec("am_f", c("wt", "hp"), task = "binary", positive = "si",
