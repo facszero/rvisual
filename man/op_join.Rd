@@ -2,17 +2,41 @@
 % Please edit documentation in R/operation_model.R
 \name{op_join}
 \alias{op_join}
-\title{Crear operación: join}
+\title{Crear operacion: unir tablas}
 \usage{
-op_join(right_df_name, by_cols, join_type = "left")
+op_join(
+  right_df_name,
+  by_cols,
+  join_type = "left",
+  right_cols = NULL,
+  key_casts = NULL,
+  right_source = NULL
+)
 }
 \arguments{
-\item{right_df_name}{Nombre del segundo dataset}
+\item{right_df_name}{Nombre del segundo data.frame: uno cargado en
+RVisual o uno del entorno global de R (ver \code{rvisual_find_dataset}).}
 
-\item{by_cols}{Vector de columnas clave (mismas en ambos)}
+\item{by_cols}{Character vector con las columnas clave del join. Si tiene
+nombres, el nombre es la columna de la tabla izquierda y el valor la de
+la tabla derecha.}
 
-\item{join_type}{"left", "right", "inner", "full"}
+\item{join_type}{Tipo de join: "left", "right", "inner", "full".}
+
+\item{right_cols}{Columnas (no clave) a traer de la tabla derecha.
+\code{NULL} trae todas.}
+
+\item{key_casts}{Conversiones de tipo de las claves, tal como las devuelve
+\code{join_key_check}: lista de \code{list(side, col)}; la columna se
+convierte a numero. \code{NULL} no convierte nada.}
+
+\item{right_source}{Origen del segundo dataset (ver
+\code{generate_load_step}), para incluir su paso de carga en el codigo.}
+}
+\value{
+Lista de operacion con type="join".
 }
 \description{
-Crear operación: join
+Crear operacion: unir tablas
 }
+\keyword{internal}

@@ -112,6 +112,11 @@ mod_dataset_server <- function(id, active_dataset, active_name, history,
       msg_carga    = ""       # mensaje de resultado de carga
     )
 
+    # Replica los origenes en el registro interno, para que otros modulos
+    # (el join del Constructor) puedan generar el paso de carga de un
+    # segundo dataset
+    shiny::observe(rvisual_set_sources(rv$sources))
+
     # Propaga tanto el dataset activo como su fuente (para poder regenerar
     # el "paso de carga" standalone en el codigo generado)
     set_activo <- function(nm) {

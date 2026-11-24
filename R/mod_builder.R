@@ -451,29 +451,46 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # 8. JOIN
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # Tabla izquierda del join: el resultado de las operaciones ya apiladas
+    # (el join se aplica despues de ellas)
+    join_left <- shiny::reactive({
+      df <- active_dataset()
+      shiny::req(df)
+      tryCatch(apply_operations(df, operation_stack()), error = function(e) df)
+    })
+
+    join_right <- shiny::reactive({
+      shiny::req(input$join_right_df)
+      tryCatch(rvisual_find_dataset(input$join_right_df), error = function(e) NULL)
+    })
+
     shiny::observeEvent(input$op_join, {
       shiny::req(active_dataset())
-      dfs_disponibles <- ls(envir = .GlobalEnv)[
-        sapply(ls(envir = .GlobalEnv),
-               function(x) is.data.frame(get(x, envir = .GlobalEnv)))
-      ]
+      candidatos <- rvisual_join_candidates()
+      if (length(candidatos) == 0) {
+        shiny::showNotification(
+          "No hay otro dataset para unir. Carg\u00e1 uno en la pesta\u00f1a Dataset.",
+          type = "warning")
+        return()
+      }
+      left_cols <- names(join_left())
       shiny::showModal(shiny::modalDialog(
         title = "Unir tablas (join)",
-        size  = "m",
+        size  = "l",
         shiny::selectInput(ns("join_right_df"), "Segundo dataset:",
-          choices = dfs_disponibles),
+          choices = candidatos),
         shiny::selectInput(ns("join_type"), "Tipo de join:",
           choices = c("Left join" = "left", "Inner join" = "inner",
                       "Right join" = "right", "Full join" = "full")),
         shiny::tags$hr(),
-        shiny::tags$strong("Columnas de union:"),
+        shiny::tags$strong("Columnas de uni\u00f3n:"),
         shiny::tags$p(shiny::tags$small(
-          "Pod?s especificar columnas con distinto nombre en cada tabla.",
+          "Pod\u00e9s especificar columnas con distinto nombre en cada tabla.",
           class = "text-muted")),
         shiny::fluidRow(
           shiny::column(5,
             shiny::selectInput(ns("join_col_left"), "Columna (tabla izquierda):",
-              choices = cols())
+              choices = left_cols)
           ),
           shiny::column(2,
             shiny::tags$div(style = "padding-top:32px; text-align:center;",
@@ -488,6 +505,19 @@ mod_builder_server <- function(id, active_dataset, active_name,
         shiny::actionButton(ns("join_add_col"), shiny::icon("plus"),
           label = " Agregar otra columna clave",
           class = "btn-sm btn-outline-secondary mb-2"),
+        shiny::uiOutput(ns("join_check_ui")),
+        shiny::tags$hr(),
+        shiny::selectizeInput(ns("join_right_cols"),
+          "Columnas a traer de la tabla derecha:",
+          choices = character(0), multiple = TRUE, width = "100%",
+          options = list(plugins = list("remove_button"))),
+        shiny::tags$div(class = "d-flex gap-2 mb-1",
+          shiny::actionLink(ns("join_cols_all"), "Todas"),
+          shiny::tags$span("\u00b7", class = "text-muted"),
+          shiny::actionLink(ns("join_cols_new"),
+                            "Solo las que no est\u00e1n en la tabla izquierda")
+        ),
+        shiny::uiOutput(ns("join_dup_ui")),
         footer = shiny::tagList(
           shiny::modalButton("Cancelar"),
           shiny::actionButton(ns("confirm_join"), "Aplicar", class = "btn-primary")
@@ -496,14 +526,82 @@ mod_builder_server <- function(id, active_dataset, active_name,
       rv_join$n_cols <- 1
     })
 
-    # Actualizar columnas del dataset derecho al cambiar la seleccion
+    # Claves elegidas: c(col_izquierda = col_derecha)
+    join_by <- shiny::reactive({
+      n <- rv_join$n_cols
+      by_left  <- c(input$join_col_left %||% "",
+        if (n > 1) vapply(2:n, function(i) input[[paste0("join_col_left_",  i)]] %||% "", character(1)))
+      by_right <- c(input$join_col_right %||% "",
+        if (n > 1) vapply(2:n, function(i) input[[paste0("join_col_right_", i)]] %||% "", character(1)))
+      valid <- nchar(by_left) > 0 & nchar(by_right) > 0
+      stats::setNames(by_right[valid], by_left[valid])
+    })
+
+    # Columnas no clave de la tabla derecha
+    join_right_nonkey <- shiny::reactive({
+      rdf <- join_right()
+      if (is.null(rdf)) return(character(0))
+      setdiff(names(rdf), unname(join_by()))
+    })
+
+    # Al cambiar de dataset derecho: claves y columnas a traer
     shiny::observeEvent(input$join_right_df, {
-      shiny::req(input$join_right_df)
-      right_cols <- tryCatch(
-        names(get(input$join_right_df, envir = .GlobalEnv)),
-        error = function(e) character(0)
+      rdf <- join_right()
+      right_cols <- if (is.null(rdf)) character(0) else names(rdf)
+      # Si hay una columna con el mismo nombre que la clave izquierda, proponerla
+      sel <- if (isTRUE(input$join_col_left %in% right_cols)) input$join_col_left else NULL
+      shiny::updateSelectInput(session, "join_col_right", choices = right_cols,
+                               selected = sel)
+      shiny::updateSelectizeInput(session, "join_right_cols",
+        choices = right_cols, selected = right_cols)
+    })
+
+    # Las claves derechas se traen siempre: no se ofrecen como columnas
+    shiny::observeEvent(join_right_nonkey(), {
+      actuales <- input$join_right_cols
+      opciones <- join_right_nonkey()
+      sel <- if (is.null(actuales)) opciones else intersect(actuales, opciones)
+      shiny::updateSelectizeInput(session, "join_right_cols",
+        choices = opciones, selected = sel)
+    })
+
+    shiny::observeEvent(input$join_cols_all, {
+      shiny::updateSelectizeInput(session, "join_right_cols",
+        selected = join_right_nonkey())
+    })
+
+    shiny::observeEvent(input$join_cols_new, {
+      shiny::updateSelectizeInput(session, "join_right_cols",
+        selected = setdiff(join_right_nonkey(), names(join_left())))
+    })
+
+    # Aviso de columnas repetidas (dplyr les agrega .x / .y)
+    output$join_dup_ui <- shiny::renderUI({
+      dup <- intersect(input$join_right_cols, names(join_left()))
+      if (length(dup) == 0) return(NULL)
+      shiny::tags$small(class = "text-muted", paste0(
+        length(dup), " columna(s) existen en las dos tablas y quedar\u00e1n ",
+        "duplicadas con sufijos .x / .y: ",
+        paste(utils::head(dup, 8), collapse = ", "),
+        if (length(dup) > 8) ", ..." else ""))
+    })
+
+    # Verificacion de tipos de las claves
+    join_check <- shiny::reactive({
+      rdf <- join_right()
+      by  <- join_by()
+      if (is.null(rdf) || length(by) == 0) return(NULL)
+      join_key_check(join_left(), rdf, by)
+    })
+
+    output$join_check_ui <- shiny::renderUI({
+      chk <- join_check()
+      if (is.null(chk) || length(chk$messages) == 0) return(NULL)
+      shiny::tags$div(
+        class = paste("alert py-2 px-3 mb-2",
+                      if (chk$ok) "alert-info" else "alert-danger"),
+        lapply(chk$messages, function(m) shiny::tags$div(shiny::tags$small(m)))
       )
-      shiny::updateSelectInput(session, "join_col_right", choices = right_cols)
     })
 
     rv_join <- shiny::reactiveValues(n_cols = 1)
@@ -515,15 +613,16 @@ mod_builder_server <- function(id, active_dataset, active_name,
     output$join_more_cols_ui <- shiny::renderUI({
       n <- rv_join$n_cols
       if (n <= 1) return(NULL)
-      right_cols <- tryCatch(
-        names(get(input$join_right_df, envir = .GlobalEnv)),
-        error = function(e) character(0)
-      )
+      rdf <- join_right()
+      right_cols <- if (is.null(rdf)) character(0) else names(rdf)
+      left_cols  <- names(join_left())
       shiny::tagList(lapply(2:n, function(i) {
+        sel_l <- shiny::isolate(input[[paste0("join_col_left_", i)]])
+        sel_r <- shiny::isolate(input[[paste0("join_col_right_", i)]])
         shiny::fluidRow(
           shiny::column(5,
             shiny::selectInput(ns(paste0("join_col_left_", i)), NULL,
-              choices = cols())
+              choices = left_cols, selected = sel_l)
           ),
           shiny::column(2,
             shiny::tags$div(style = "padding-top:8px; text-align:center;",
@@ -531,29 +630,36 @@ mod_builder_server <- function(id, active_dataset, active_name,
           ),
           shiny::column(5,
             shiny::selectInput(ns(paste0("join_col_right_", i)), NULL,
-              choices = right_cols)
+              choices = right_cols, selected = sel_r)
           )
         )
       }))
     })
 
     shiny::observeEvent(input$confirm_join, {
-      shiny::req(input$join_right_df, input$join_col_left, input$join_col_right)
-      n <- rv_join$n_cols
-      # Construir vector named: c("col_izq" = "col_der")
-      by_left  <- c(input$join_col_left,
-        vapply(2:n, function(i) input[[paste0("join_col_left_",  i)]] %||% "", character(1)))
-      by_right <- c(input$join_col_right,
-        vapply(2:n, function(i) input[[paste0("join_col_right_", i)]] %||% "", character(1)))
-      valid <- nchar(by_left) > 0 & nchar(by_right) > 0
-      by_left  <- by_left[valid]
-      by_right <- by_right[valid]
-      # dplyr: c("col_izquierda" = "col_derecha")
-      # name = columna del dataset izquierdo, value = columna del derecho
-      by_named <- by_right          # valores = columnas del dataset derecho
-      names(by_named) <- by_left    # nombres = columnas del dataset izquierdo
+      shiny::req(input$join_right_df)
+      by_named <- join_by()
+      if (length(by_named) == 0) {
+        shiny::showNotification("Eleg\u00ed al menos una columna clave.", type = "warning")
+        return()
+      }
+      chk <- join_check()
+      if (!is.null(chk) && !chk$ok) {
+        shiny::showNotification(paste(chk$messages, collapse = " "),
+                                type = "error", duration = 10)
+        return()
+      }
+      # NULL = todas las columnas (mismo codigo que antes de existir el selector)
+      # (%||% del paquete no admite vectores de largo > 1)
+      elegidas   <- input$join_right_cols
+      if (is.null(elegidas)) elegidas <- character(0)
+      right_cols <- if (setequal(elegidas, join_right_nonkey())) NULL else elegidas
+      casts <- if (!is.null(chk) && length(chk$casts) > 0) chk$casts else NULL
       push_operation(operation_stack, history,
-        op_join(input$join_right_df, by_named, input$join_type))
+        op_join(input$join_right_df, by_named, input$join_type,
+                right_cols   = right_cols,
+                key_casts    = casts,
+                right_source = rvisual_source(input$join_right_df)))
       shiny::removeModal()
     })
 
