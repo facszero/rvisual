@@ -201,12 +201,12 @@ test_that("'Ninguna' trae solo las claves de la tabla derecha", {
                 history = shiny::reactiveVal(list())), {
       session$setInputs(op_join = 1)
       session$setInputs(join_right_df = "tj_der", join_type = "left",
-                        join_col_left = "mes", join_col_right = "mes")
+                        join_col_left = "id", join_col_right = "id")
       session$setInputs(join_cols_none = 1)
       expect_true(rv_join$none)
       session$setInputs(join_right_cols = NULL, confirm_join = 1)
       p <- stack()[[1]]$params
       expect_identical(p$right_cols, character(0))
-      expect_match(code_join(p), "tj_der |> dplyr::select(mes)", fixed = TRUE)
+      expect_match(code_join(p), "tj_der |> dplyr::select(id)", fixed = TRUE)
     })
 })
