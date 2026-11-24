@@ -167,6 +167,8 @@ test_that("ml_run y el script entregado funcionan con un join del Constructor", 
                              source = list(kind = "archivo", ext = "rds", filename = ruta))
   expect_match(script, paste0('tj_extra <- readRDS("', ruta_para_codigo(ruta_extra), '")'), fixed = TRUE)
   env <- new.env(parent = globalenv())
+  old <- setwd(tempdir())  # el script guarda el modelo en el directorio de trabajo
+  on.exit(setwd(old), add = TRUE)
   utils::capture.output(eval(parse(text = script), envir = env))
   expect_identical(r$comparison, env$comparacion)
 })
