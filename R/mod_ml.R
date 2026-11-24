@@ -35,10 +35,11 @@ mod_ml_ui <- function(id) {
             shiny::selectizeInput(ns("predictors"), "Predictores", choices = NULL,
                                   multiple = TRUE,
                                   options = list(plugins = list("remove_button"))),
-            shiny::div(class = "d-flex gap-2 mb-2 small",
-              shiny::actionLink(ns("pred_all"), "Todos"),
-              shiny::tags$span("\u00b7", class = "text-muted"),
-              shiny::actionLink(ns("pred_none"), "Quitar todos")),
+            shiny::div(class = "d-flex gap-2 mb-2",
+              shiny::actionButton(ns("pred_all"), "Todos",
+                                  class = "btn-sm btn-outline-secondary"),
+              shiny::actionButton(ns("pred_none"), "Quitar todos",
+                                  class = "btn-sm btn-outline-secondary")),
             shiny::uiOutput(ns("ops_notice"))
           )
         ),
