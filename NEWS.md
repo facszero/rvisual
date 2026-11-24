@@ -30,6 +30,16 @@
 
 ## Correcciones
 
+* **Unir tablas (join):** el diálogo solo ofrecía los data.frames del
+  entorno global de R, así que un dataset cargado en RVisual no se podía
+  usar como segunda tabla. Ahora aparecen los dos grupos. Además:
+  * se verifican los tipos de las claves antes de aplicar; si una es
+    número y la otra texto con solo dígitos, se convierte la de texto a
+    número, y cualquier otra combinación se informa sin aplicar el join;
+  * se pueden elegir las columnas a traer de la tabla derecha, con aviso de
+    las que quedarían duplicadas (`.x` / `.y`);
+  * el código generado (y el script de Modelado) incluye la carga del
+    segundo dataset.
 * **Panel de base de datos:** elegir SQLite como motor cortaba la sesión
   (`subscript out of bounds`).
 * **Panel de base de datos:** al cerrar la app aparecía el error

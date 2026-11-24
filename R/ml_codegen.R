@@ -144,8 +144,12 @@ ml_code_data <- function(df_name, ops, source) {
     lines <- vapply(ops, op_to_code_line, character(1))
     paste0("datos <- ", paste(c(df_name, lines), collapse = " |>\n  "))
   }
+  # Segundos datasets de los joins: solo cuando el script lleva paso de
+  # carga (ml_run() lo genera sin carga y pone los datos en memoria)
+  join_steps <- if (is.null(source)) character(0)
+                else generate_join_load_steps(ops, df_name)
   paste(c(ml_section("1. Datos (carga + operaciones del Constructor)"),
-          load_step, body), collapse = "\n")
+          load_step, join_steps, body), collapse = "\n")
 }
 
 ml_code_prepare <- function(spec) {

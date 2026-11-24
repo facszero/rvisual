@@ -140,3 +140,33 @@ test_that("ml_run_notices avisa datasets grandes y muchos ajustes", {
 test_that("ml_importance devuelve NULL para la linea base", {
   expect_null(ml_importance("baseline", 3.5, c("x")))
 })
+
+test_that("ml_run y el script entregado funcionan con un join del Constructor", {
+  autos <- cbind(id = seq_len(nrow(mtcars)), mtcars[, c("mpg", "wt", "cyl")])
+  extra <- data.frame(id = as.character(seq_len(nrow(mtcars))), hp = mtcars$hp,
+                      stringsAsFactors = FALSE)
+  assign("tj_extra", extra, envir = rvisual_env())
+  on.exit(rm("tj_extra", envir = rvisual_env()))
+  by  <- c(id = "id")
+  chk <- join_key_check(autos, extra, by)
+  ruta_extra <- tempfile(fileext = ".rds")
+  saveRDS(extra, ruta_extra)
+  ops <- list(op_join("tj_extra", by, "left", key_casts = chk$casts,
+                      right_source = list(kind = "archivo", ext = "rds",
+                                          filename = ruta_extra)))
+  spec <- ml_spec("mpg", c("wt", "hp", "cyl"), task = "regression",
+                  models = list(ml_model("baseline"), ml_model("lm")), folds = 3L)
+  spec$final <- "lm"
+  r <- ml_run(spec, autos, df_name = "autos", ops = ops)
+  expect_true(r$ok)
+  expect_false(grepl("readRDS", r$code))
+
+  ruta <- tempfile(fileext = ".rds")
+  saveRDS(autos, ruta)
+  script <- ml_generate_code(spec, "autos", ops = ops,
+                             source = list(kind = "archivo", ext = "rds", filename = ruta))
+  expect_match(script, paste0('tj_extra <- readRDS("', ruta_para_codigo(ruta_extra), '")'), fixed = TRUE)
+  env <- new.env(parent = globalenv())
+  utils::capture.output(eval(parse(text = script), envir = env))
+  expect_identical(r$comparison, env$comparacion)
+})

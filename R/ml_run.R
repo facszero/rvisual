@@ -55,6 +55,14 @@ ml_run <- function(spec, data, df_name = "datos_rvisual", ops = list(),
 
   env <- new.env(parent = baseenv())
   assign(df_name, data, envir = env)
+  # Segundas tablas de los joins del Constructor (ya estan en memoria)
+  for (op in ops) {
+    if (!identical(op$type, "join")) next
+    nm <- op$params$right_df
+    if (identical(nm, df_name) || exists(nm, envir = env, inherits = FALSE)) next
+    right <- tryCatch(rvisual_find_dataset(nm), error = function(e) NULL)
+    if (!is.null(right)) assign(nm, right, envir = env)
+  }
 
   restore_seed <- ml_preserve_seed()
   on.exit(restore_seed(), add = TRUE)
