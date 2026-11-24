@@ -29,6 +29,13 @@
   categorías no vistas. El script suma la sección 9 con la misma
   aplicación.
 
+## Directorio de trabajo
+
+* La pestaña Dataset muestra el directorio de trabajo y permite cambiarlo
+  con el selector de carpetas de RStudio (o escribiendo la ruta). Si el
+  dataset activo vino de un archivo, avisa si ese archivo está en el
+  directorio: el código generado lo carga por su nombre.
+
 ## Datos de ejemplo
 
 * Nuevo juego de datos sintético `ech_sintetica` (2.213 personas, 17
