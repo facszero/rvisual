@@ -55,3 +55,19 @@ test_that("si una operacion falla, la vista previa vuelve al dataset original", 
       expect_identical(cols(), names(base_cc()))
     })
 })
+
+test_that("filtrar una variable creada registra su tipo real", {
+  ds    <- shiny::reactiveVal(base_cc())
+  stack <- shiny::reactiveVal(list(op_mutate("cod", "paste0('0', round(p))")))
+  code  <- shiny::reactiveVal("")
+  shiny::testServer(mod_builder_server,
+    args = list(active_dataset = ds, active_name = shiny::reactiveVal("d"),
+                operation_stack = stack, generated_code = code,
+                history = shiny::reactiveVal(list())), {
+      session$setInputs(op_filter = 1, filter_col = "cod", filter_op = "==",
+                        filter_val = "010", confirm_filter = 1)
+      expect_false(stack()[[2]]$params$numeric)
+      expect_equal(nrow(preview_data()), 1)
+      expect_match(code(), 'dplyr::filter(cod == "010")', fixed = TRUE)
+    })
+})

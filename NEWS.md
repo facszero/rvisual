@@ -45,6 +45,11 @@
 
 ## Correcciones
 
+* **Constructor:** los diálogos ofrecían las columnas del dataset original
+  y no las del resultado actual. Una variable creada con *Crear variable*
+  no se podía usar después (por ejemplo, para calcular su mediana en
+  *Agrupar y resumir*). Ahora cada diálogo muestra las columnas que existen
+  en ese punto de la secuencia de operaciones.
 * **Filtrar y recodificar texto que parece número:** un filtro como
   `DIVISION == "01"` se escribía como `DIVISION == 01` y no devolvía
   filas (lo mismo con variedades, productos y cualquier código con ceros a

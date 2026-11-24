@@ -193,7 +193,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
       shiny::req(input$filter_col, input$filter_op, input$filter_val)
       push_operation(operation_stack, history,
                      op_filter(input$filter_col, input$filter_op, input$filter_val,
-                               numeric = is.numeric(active_dataset()[[input$filter_col]])))
+                               numeric = is.numeric(current_data()[[input$filter_col]])))
       shiny::removeModal()
     })
 
@@ -456,7 +456,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
       if (length(mapping) > 0) {
         push_operation(operation_stack, history,
                        op_recode(input$recode_col, mapping,
-                                 numeric = is.numeric(active_dataset()[[input$recode_col]])))
+                                 numeric = is.numeric(current_data()[[input$recode_col]])))
       }
       shiny::removeModal()
     })
@@ -466,11 +466,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     # Tabla izquierda del join: el resultado de las operaciones ya apiladas
     # (el join se aplica despues de ellas)
-    join_left <- shiny::reactive({
-      df <- active_dataset()
-      shiny::req(df)
-      tryCatch(apply_operations(df, operation_stack()), error = function(e) df)
-    })
+    join_left <- shiny::reactive(current_data())
 
     join_right <- shiny::reactive({
       shiny::req(input$join_right_df)
