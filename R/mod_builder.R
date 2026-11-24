@@ -52,15 +52,26 @@ mod_builder_server <- function(id, active_dataset, active_name,
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # -- Helper: columnas del dataset activo -------------------------------
-    cols <- shiny::reactive({
+    # -- Resultado actual: dataset activo + operaciones ya apiladas ---------
+    # Cada operacion nueva se aplica sobre este resultado, asi que los
+    # dialogos ofrecen SUS columnas (incluidas las creadas por operaciones
+    # anteriores) y no solo las del dataset original.
+    current_result <- shiny::reactive({
       df <- active_dataset()
-      if (is.null(df)) character(0) else names(df)
+      shiny::req(df)
+      tryCatch(list(ok = TRUE, data = apply_operations(df, operation_stack())),
+               error = function(e) list(ok = FALSE, data = df, msg = conditionMessage(e)))
+    })
+    current_data <- shiny::reactive(current_result()$data)
+
+    # -- Helper: columnas del resultado actual ------------------------------
+    cols <- shiny::reactive({
+      if (is.null(active_dataset())) character(0) else names(current_data())
     })
     cols_num <- shiny::reactive({
-      df <- active_dataset()
-      if (is.null(df)) character(0)
-      else names(df)[sapply(df, is.numeric)]
+      if (is.null(active_dataset())) return(character(0))
+      df <- current_data()
+      names(df)[vapply(df, is.numeric, logical(1))]
     })
 
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -162,7 +173,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
     })
     output$filter_value_ui <- shiny::renderUI({
       shiny::req(input$filter_col, active_dataset())
-      col <- active_dataset()[[input$filter_col]]
+      col <- current_data()[[input$filter_col]]
       if (is.numeric(col)) {
         shiny::tagList(
           shiny::selectInput(ns("filter_op"), "Condici\u00f3n:",
@@ -414,7 +425,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
     })
     output$recode_values_ui <- shiny::renderUI({
       shiny::req(input$recode_col, active_dataset())
-      vals <- unique(na.omit(active_dataset()[[input$recode_col]]))
+      vals <- unique(na.omit(current_data()[[input$recode_col]]))
       vals <- head(as.character(vals), 20)  # m\u00e1x 20 valores
       shiny::tagList(
         shiny::tags$p(shiny::tags$small(
@@ -432,7 +443,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
     })
     shiny::observeEvent(input$confirm_recode, {
       shiny::req(input$recode_col, active_dataset())
-      vals <- head(as.character(unique(na.omit(active_dataset()[[input$recode_col]]))), 20)
+      vals <- head(as.character(unique(na.omit(current_data()[[input$recode_col]]))), 20)
       mapping <- stats::setNames(
         lapply(vals, function(v) {
           nuevo <- input[[paste0("recode_new_", make.names(v))]]
@@ -726,16 +737,10 @@ mod_builder_server <- function(id, active_dataset, active_name,
     # VISTA PREVIA
     # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     preview_data <- shiny::reactive({
-      df  <- active_dataset()
-      ops <- operation_stack()
-      shiny::req(df)
-      tryCatch(
-        apply_operations(df, ops),
-        error = function(e) {
-          shiny::showNotification(paste("Error en preview:", e$message), type = "warning")
-          df
-        }
-      )
+      r <- current_result()
+      if (!isTRUE(r$ok))
+        shiny::showNotification(paste("Error en preview:", r$msg), type = "warning")
+      r$data
     })
 
     output$preview_table <- DT::renderDT({
