@@ -156,3 +156,13 @@ test_that("ayudantes de interfaz", {
                    c("AUC", "Exactitud", "otra"))
   expect_identical(ml_ui_engine_label("baseline"), "L\u00ednea base")
 })
+
+test_that("los atajos Todos / Quitar todos de predictores no fallan", {
+  ds <- shiny::reactiveVal(mtcars)
+  shiny::testServer(mod_ml_server,
+    args = list(active_dataset = ds, active_name = shiny::reactiveVal("mtcars")), {
+      session$setInputs(target = "mpg")
+      expect_no_error(session$setInputs(pred_none = 1))
+      expect_no_error(session$setInputs(pred_all = 1))
+    })
+})

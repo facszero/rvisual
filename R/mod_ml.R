@@ -35,6 +35,10 @@ mod_ml_ui <- function(id) {
             shiny::selectizeInput(ns("predictors"), "Predictores", choices = NULL,
                                   multiple = TRUE,
                                   options = list(plugins = list("remove_button"))),
+            shiny::div(class = "d-flex gap-2 mb-2 small",
+              shiny::actionLink(ns("pred_all"), "Todos"),
+              shiny::tags$span("\u00b7", class = "text-muted"),
+              shiny::actionLink(ns("pred_none"), "Quitar todos")),
             shiny::uiOutput(ns("ops_notice"))
           )
         ),
@@ -135,6 +139,16 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       current <- shiny::isolate(input$target)
       shiny::updateSelectInput(session, "target", choices = cols,
         selected = if (!is.null(current) && current %in% cols) current else character(0))
+    })
+
+    shiny::observeEvent(input$pred_all, {
+      cols <- names(model_data())
+      shiny::updateSelectizeInput(session, "predictors",
+        selected = setdiff(cols, input$target %||% ""))
+    })
+
+    shiny::observeEvent(input$pred_none, {
+      shiny::updateSelectizeInput(session, "predictors", selected = character(0))
     })
 
     shiny::observeEvent(input$target, {

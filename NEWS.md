@@ -20,6 +20,8 @@
   produce el script.
 * El modelo final se puede enviar al panel Código R, ejecutar en la
   consola o descargar (`.rds`), junto con el script (`.R`).
+* Atajos **Todos / Quitar todos** para los predictores del paso 1, y
+  **Ninguna** para las columnas a traer en *Unir tablas*.
 * **Aplicar a datos nuevos (paso 6):** predice con el modelo final sobre
   otro conjunto de filas (otro dataset, o el mismo con otro filtro, como
   `A_IMPUTAR == 1`) y lo guarda como un dataset nuevo en la pestaña
