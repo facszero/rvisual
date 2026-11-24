@@ -33,15 +33,21 @@ op_select <- function(cols) {
 #' @param col Nombre de la columna a filtrar.
 #' @param op Operador de comparacion: "==", "!=", ">", "<", ">=", "<=".
 #' @param value Valor de comparacion.
+#' @param numeric \code{TRUE} si la columna es numerica (el valor va sin
+#'   comillas en el codigo), \code{FALSE} si es texto, factor, logica o
+#'   fecha (el valor va entre comillas aunque parezca un numero, como
+#'   "01"). \code{NULL} lo deduce del valor, como antes de existir este
+#'   argumento.
 #' @return Lista de operacion con type="filter".
 #' @examples
 #' op <- rvisual:::op_filter("anio", "==", 2024)
+#' op <- rvisual:::op_filter("division", "==", "01", numeric = FALSE)
 #' @keywords internal
-op_filter <- function(col, op, value) {
+op_filter <- function(col, op, value, numeric = NULL) {
   stopifnot(is.character(col), op %in% c("==", "!=", ">", "<", ">=", "<="))
   list(type = "filter",
        label = glue::glue("Filtrar: {col} {op} {value}"),
-       params = list(col = col, op = op, value = value),
+       params = list(col = col, op = op, value = value, numeric = numeric),
        created_at = Sys.time())
 }
 
@@ -102,12 +108,15 @@ op_rename <- function(old_name, new_name) {
 #' @param col Nombre de la columna a recodificar.
 #' @param mapping Lista nombrada con los reemplazos:
 #'   \code{list(valor_original = valor_nuevo)}.
+#' @param numeric \code{TRUE} si la columna es numerica; \code{FALSE} si
+#'   no (los valores originales van entre comillas en el codigo).
+#'   \code{NULL} lo deduce de cada valor, como antes.
 #' @return Lista de operacion con type="recode".
 #' @keywords internal
-op_recode <- function(col, mapping) {
+op_recode <- function(col, mapping, numeric = NULL) {
   list(type = "recode",
        label = glue::glue("Recodificar: {col} ({length(mapping)} valores)"),
-       params = list(col = col, mapping = mapping),
+       params = list(col = col, mapping = mapping, numeric = numeric),
        created_at = Sys.time())
 }
 
@@ -145,7 +154,10 @@ apply_single_operation <- function(df, op) {
   switch(op$type,
     "select" = dplyr::select(df, dplyr::all_of(op$params$cols)),
     "filter" = {
-      expr_text <- build_filter_expr(op$params$col, op$params$op, op$params$value)
+      # El tipo real de la columna decide si el valor es numero o texto
+      col <- op$params$col
+      numeric <- if (col %in% names(df)) is.numeric(df[[col]]) else op$params$numeric
+      expr_text <- build_filter_expr(col, op$params$op, op$params$value, numeric)
       dplyr::filter(df, eval(parse(text = expr_text)))
     },
     "arrange" = {
@@ -211,8 +223,6 @@ apply_single_operation <- function(df, op) {
   )
 }
 
-build_filter_expr <- function(col, op, value) {
-  value_str <- if (!is.na(suppressWarnings(as.numeric(value))))
-    as.character(value) else paste0('"', value, '"')
-  paste0(".data[['", col, "']] ", op, " ", value_str)
+build_filter_expr <- function(col, op, value, numeric = NULL) {
+  paste0(".data[['", col, "']] ", op, " ", format_value_for_code(value, numeric))
 }

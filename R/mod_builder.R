@@ -181,7 +181,8 @@ mod_builder_server <- function(id, active_dataset, active_name,
     shiny::observeEvent(input$confirm_filter, {
       shiny::req(input$filter_col, input$filter_op, input$filter_val)
       push_operation(operation_stack, history,
-                     op_filter(input$filter_col, input$filter_op, input$filter_val))
+                     op_filter(input$filter_col, input$filter_op, input$filter_val,
+                               numeric = is.numeric(active_dataset()[[input$filter_col]])))
       shiny::removeModal()
     })
 
@@ -443,7 +444,8 @@ mod_builder_server <- function(id, active_dataset, active_name,
       mapping <- mapping[vapply(names(mapping), function(k) mapping[[k]] != k, logical(1))]
       if (length(mapping) > 0) {
         push_operation(operation_stack, history,
-                       op_recode(input$recode_col, mapping))
+                       op_recode(input$recode_col, mapping,
+                                 numeric = is.numeric(active_dataset()[[input$recode_col]])))
       }
       shiny::removeModal()
     })

@@ -182,7 +182,7 @@ code_select <- function(p) {
 }
 
 code_filter <- function(p) {
-  value_str <- format_value_for_code(p$value)
+  value_str <- format_value_for_code(p$value, p$numeric)
   col       <- safe_col(p$col)
   as.character(glue::glue("dplyr::filter({col} {p$op} {value_str})"))
 }
@@ -244,7 +244,8 @@ code_recode <- function(p) {
     new_val <- gsub("\u201c|\u201d", '"', new_val)
     new_val <- gsub("\u2018|\u2019", "'", new_val)
     as.character(glue::glue(
-      "{col} == {format_value_for_code(old_val)} ~ {format_value_for_code(new_val)}"
+      # El valor nuevo siempre es texto: la recodificacion devuelve texto
+      "{col} == {format_value_for_code(old_val, p$numeric)} ~ {format_value_for_code(new_val, FALSE)}"
     ))
   }, character(1))
   cases_str <- paste(cases, collapse = ",\n      ")
@@ -270,7 +271,18 @@ code_join <- function(p) {
   as.character(glue::glue("{join_fn}({p$right_df}, by = {by_str})"))
 }
 
-format_value_for_code <- function(value) {
-  if (!is.na(suppressWarnings(as.numeric(value)))) as.character(value)
-  else paste0('"', value, '"')
+#' Escribir un valor como literal de R
+#'
+#' @param value Valor (texto o numero).
+#' @param numeric \code{TRUE}: numero sin comillas; \code{FALSE}: texto
+#'   entre comillas aunque parezca un numero ("01" sigue siendo "01");
+#'   \code{NULL}: se deduce del valor (comportamiento anterior).
+#' @return String con el literal.
+#' @keywords internal
+format_value_for_code <- function(value, numeric = NULL) {
+  if (is.null(numeric))
+    numeric <- !is.na(suppressWarnings(as.numeric(value)))
+  es_numero <- !is.na(suppressWarnings(as.numeric(value)))
+  if (isTRUE(numeric) && es_numero) as.character(value)
+  else encodeString(as.character(value), quote = '"')
 }
