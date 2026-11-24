@@ -2,14 +2,17 @@
 % Please edit documentation in R/mod_config.R
 \name{mod_config_ui}
 \alias{mod_config_ui}
-\title{Módulo: Configuración}
+\title{Modulo: Configuracion}
 \usage{
 mod_config_ui(id)
 }
 \arguments{
-\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+\item{id}{ID del modulo Shiny.}
+}
+\value{
+Un objeto shiny.tag con la UI de configuracion.
 }
 \description{
-Pantalla de configuración del addin.
+Pantalla de configuracion del addin.
 Permite gestionar proveedores IA, API keys, modelos y preferencias.
 }

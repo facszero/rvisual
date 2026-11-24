@@ -21,7 +21,15 @@ config_path <- function() {
 #' @return Invisiblemente \code{cfg}.
 #' @keywords internal
 config_save <- function(cfg) {
-  jsonlite::write_json(cfg, config_path(), auto_unbox = TRUE)
+  archivo <- cfg
+  # La clave de API va al llavero del sistema si hay uno; en el archivo
+  # queda solo la marca de que esta alli
+  if (!is.null(cfg$api_key) && nzchar(cfg$api_key) && !is.null(cfg$provider) &&
+      rvisual_key_set(cfg$provider, cfg$api_key)) {
+    archivo$api_key <- NULL
+    archivo$keyring_api <- TRUE
+  }
+  jsonlite::write_json(archivo, config_path(), auto_unbox = TRUE)
   invisible(cfg)
 }
 
@@ -31,8 +39,11 @@ config_save <- function(cfg) {
 config_load <- function() {
   path <- config_path()
   if (!file.exists(path)) return(list())
-  tryCatch(jsonlite::read_json(path, simplifyVector = FALSE),
-           error = function(e) list())
+  cfg <- tryCatch(jsonlite::read_json(path, simplifyVector = FALSE),
+                  error = function(e) list())
+  if (is.null(cfg[["api_key"]]) && isTRUE(cfg[["keyring_api"]]))
+    cfg$api_key <- rvisual_key_get(cfg$provider)
+  cfg
 }
 
 #' Registrar un evento en el historial de sesion

@@ -13,6 +13,11 @@
 #'   Asistente IA, ya que el panel embebido bloquea conexiones HTTP
 #'   salientes. Default \code{FALSE}.
 #'
+#' @param width,height Tamano en pixeles de la ventana del addin dentro de
+#'   RStudio. Por defecto 1400 x 900, o los valores de las opciones
+#'   \code{rvisual.width} y \code{rvisual.height} si estan definidas (por
+#'   ejemplo en \code{.Rprofile}). Se ignoran si se abre en el navegador.
+#'
 #' @return Invisiblemente \code{NULL}. La funcion bloquea la sesion R
 #'   mientras la interfaz esta abierta (comportamiento normal de gadgets
 #'   Shiny).
@@ -24,15 +29,25 @@
 #'
 #' # Abrir en browser (necesario para el Asistente IA)
 #' launch_rvisual(browser = TRUE)
+#'
+#' # Ventana mas grande dentro de RStudio
+#' launch_rvisual(width = 1800, height = 1000)
+#'
+#' # Fijar el tamano para siempre (por ejemplo en .Rprofile)
+#' options(rvisual.width = 1800, rvisual.height = 1000)
 #' }
 #'
 #' @export
 #' @importFrom shiny runGadget runApp shinyApp dialogViewer
 #' @importFrom rstudioapi isAvailable
-launch_rvisual <- function(browser = FALSE) {
+launch_rvisual <- function(browser = FALSE,
+                           width  = getOption("rvisual.width", 1400),
+                           height = getOption("rvisual.height", 900)) {
 
-  # Subir l\u00edmite de upload a 50 MB
-  options(shiny.maxRequestSize = 50 * 1024^2)
+  # Subir l\u00edmite de upload a 50 MB mientras la app esta abierta; al
+  # cerrarla se restaura el valor que tenia el usuario (politica de CRAN)
+  old <- options(shiny.maxRequestSize = 50 * 1024^2)
+  on.exit(options(old), add = TRUE)
 
   ui     <- rvisual_ui()
   server <- rvisual_server
@@ -45,8 +60,8 @@ launch_rvisual <- function(browser = FALSE) {
   } else {
     viewer <- shiny::dialogViewer(
       dialogName = "RVisual",
-      width  = 1200,
-      height = 800
+      width  = width,
+      height = height
     )
     shiny::runGadget(
       app          = shiny::shinyApp(ui = ui, server = server),

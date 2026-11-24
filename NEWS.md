@@ -1,3 +1,105 @@
+# rvisual 0.3.0
+
+## Nuevo panel: Modelado (ML)
+
+* Asistente de seis pasos para aprendizaje supervisado sobre datos
+  tabulares: objetivo, diagnóstico, partición y modelos, comparación por
+  validación cruzada, modelo final y aplicación a datos nuevos.
+  Regresión, clasificación binaria y multiclase. Ver `vignette("modelado", package = "rvisual")`.
+* **Diagnóstico** con reglas explícitas: identificadores, alta
+  cardinalidad, NA, pocas filas, muchos términos, clases desbalanceadas,
+  muchos ceros, asimetría y **posible fuga de información** (las variables
+  con fuga se excluyen por defecto).
+* **Modelos:** línea base, regresión lineal y logística, elastic net
+  (`glmnet`), árbol (`rpart`), Random Forest (`ranger`) y gradient boosting
+  (`xgboost` >= 3.2.1.1). Los paquetes de ML están en `Suggests`: la
+  instalación de RVisual no cambia.
+* **Script reproducible:** todo el modelado se entrega como un script R
+  autocontenido (carga, operaciones del Constructor, partición, validación
+  cruzada y modelo final). Las métricas del panel son exactamente las que
+  produce el script.
+* El modelo final se puede enviar al panel Código R, ejecutar en la
+  consola o descargar (`.rds`), junto con el script (`.R`).
+* Atajos **Todos / Quitar todos** para los predictores del paso 1, y
+  **Ninguna** para las columnas a traer en *Unir tablas*.
+* **Aplicar a datos nuevos (paso 6):** predice con el modelo final sobre
+  otro conjunto de filas (otro dataset, o el mismo con otro filtro, como
+  `A_IMPUTAR == 1`) y lo guarda como un dataset nuevo en la pestaña
+  Dataset, sin cambiar el activo. Los datos se preparan igual que el
+  entrenamiento (tipos, niveles de factores, imputación con la referencia
+  del entrenamiento) y el panel informa las filas sin predicción y las
+  categorías no vistas. El script suma la sección 9 con la misma
+  aplicación.
+
+## Directorio de trabajo
+
+* La pestaña Dataset muestra el directorio de trabajo y permite cambiarlo
+  con el selector de carpetas de RStudio (o escribiendo la ruta). Si el
+  dataset activo vino de un archivo, avisa si ese archivo está en el
+  directorio: el código generado lo carga por su nombre.
+
+## Seguridad del Asistente IA
+
+* Si el paquete `keyring` está instalado y el sistema tiene un llavero
+  (Administrador de credenciales de Windows, Llavero de macOS, Secret
+  Service en Linux), la API key se guarda allí y no en el archivo de
+  configuración. Sin llavero, todo sigue como antes; la pantalla de
+  Configuración dice dónde quedó la clave.
+* El respaldo por `curl` del sistema ya no pone la API key en la línea de
+  comando (visible para otros procesos): los encabezados van en un archivo
+  temporal que se borra al terminar.
+* Google Gemini recibe la clave en un encabezado y no en la URL.
+
+## Datos de ejemplo
+
+* Nuevo juego de datos sintético `ech_sintetica` (2.213 personas, 17
+  variables) en `inst/extdata`, en CSV, Excel, RDS, SPSS y SQLite, más una
+  tabla de departamentos para probar uniones. Diccionario y ejercicios por
+  panel en `inst/extdata/LEEME.md`.
+
+## Correcciones
+
+* **Código R → Ejecutar** fallaba con datasets que solo existen dentro de
+  RVisual (por ejemplo, las predicciones del panel Modelado). Ahora el
+  código los encuentra, sin escribirlos en el entorno global. Lo mismo al
+  ejecutar código desde el chat del Asistente IA.
+* **Configuración:** guardar la configuración de IA borraba las últimas
+  conexiones a bases de datos guardadas.
+* `launch_rvisual()` restaura la opción `shiny.maxRequestSize` del usuario
+  al cerrar la app.
+* El `NAMESPACE` se genera completo con roxygen2 (antes estaba escrito a
+  mano y desactualizado). La API pública no cambia: solo
+  `launch_rvisual()`.
+* **Constructor:** los diálogos ofrecían las columnas del dataset original
+  y no las del resultado actual. Una variable creada con *Crear variable*
+  no se podía usar después (por ejemplo, para calcular su mediana en
+  *Agrupar y resumir*). Ahora cada diálogo muestra las columnas que existen
+  en ese punto de la secuencia de operaciones.
+* **Filtrar y recodificar texto que parece número:** un filtro como
+  `DIVISION == "01"` se escribía como `DIVISION == 01` y no devolvía
+  filas (lo mismo con variedades, productos y cualquier código con ceros a
+  la izquierda). Ahora el tipo de la columna decide si el valor va entre
+  comillas, en la vista previa y en el código generado.
+* **Unir tablas (join):** el diálogo solo ofrecía los data.frames del
+  entorno global de R, así que un dataset cargado en RVisual no se podía
+  usar como segunda tabla. Ahora aparecen los dos grupos. Además:
+  * se verifican los tipos de las claves antes de aplicar; si una es
+    número y la otra texto con solo dígitos, se convierte la de texto a
+    número, y cualquier otra combinación se informa sin aplicar el join;
+  * se pueden elegir las columnas a traer de la tabla derecha, con aviso de
+    las que quedarían duplicadas (`.x` / `.y`);
+  * el código generado (y el script de Modelado) incluye la carga del
+    segundo dataset.
+* **Panel de base de datos:** elegir SQLite como motor cortaba la sesión
+  (`subscript out of bounds`).
+* **Panel de base de datos:** al cerrar la app aparecía el error
+  "Operation not allowed without an active reactive context" y una
+  conexión abierta quedaba sin cerrar.
+* **Código generado en Windows:** las rutas con barras invertidas
+  (`C:\Users\...`) hacían que el script no se pudiera leer
+  ("'\U' used without hex digits"). Afectaba a los datasets cargados desde
+  SQLite.
+
 # rvisual 0.1.1
 
 ## Correcciones (Round 2 de pruebas)

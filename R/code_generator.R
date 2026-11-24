@@ -22,6 +22,9 @@ NULL
 #' @keywords internal
 generate_code <- function(df_name, ops, assign_to = NULL, source = NULL) {
   load_step <- generate_load_step(df_name, source)
+  join_steps <- generate_join_load_steps(ops, df_name)
+  if (length(join_steps) > 0)
+    load_step <- paste(c(load_step, join_steps), collapse = "\n\n")
 
   body_code <- if (length(ops) == 0) {
     paste0("# Sin operaciones definidas sobre '", df_name, "'.")
@@ -62,7 +65,7 @@ generate_load_step <- function(df_name, source) {
 
     "archivo" = {
       ext <- tolower(source$ext %||% "")
-      ruta <- source$filename %||% paste0(df_name, ".", ext)
+      ruta <- ruta_para_codigo(source$filename %||% paste0(df_name, ".", ext))
       linea <- switch(ext,
         csv = as.character(glue::glue(
           '{df_name} <- read.csv("{ruta}", sep = "{source$sep %||% ","}", ',
@@ -116,7 +119,7 @@ generate_load_step <- function(df_name, source) {
           '  dbname = "{source$oracle_service %||% source$host}"\n'
         )),
         sqlite = as.character(glue::glue(
-          '  RSQLite::SQLite(),\n  dbname = "{source$filepath %||% ""}"\n'
+          '  RSQLite::SQLite(),\n  dbname = "{ruta_para_codigo(source$filepath %||% "")}"\n'
         )),
         db2 = as.character(glue::glue(
           "  odbc::odbc(),\n",
@@ -144,6 +147,11 @@ generate_load_step <- function(df_name, source) {
       )
     },
 
+    "modelo_ml" = paste0(
+      "# '", df_name, "' se cre\u00f3 en el panel Modelado (ML) de RVisual.\n",
+      "# Ejecut\u00e1 antes el script de modelado: su secci\u00f3n 9 lo deja con este nombre."
+    ),
+
     "entorno" = paste0(
       "# '", df_name, "' ya exist\u00eda en tu entorno de R antes de abrir RVisual.\n",
       "# Este script asume que sigue disponible con ese nombre; si no, ",
@@ -152,6 +160,20 @@ generate_load_step <- function(df_name, source) {
 
     NULL
   )
+}
+
+#' Preparar una ruta de archivo para escribirla dentro de un string R
+#'
+#' En Windows las rutas usan barras invertidas, que dentro de un string R
+#' se interpretan como secuencias de escape (\code{"C:\\Users"} contiene
+#' \code{\\U}): el script generado no se podria leer. Se usan barras
+#' normales, que R acepta en todos los sistemas operativos.
+#'
+#' @param ruta Ruta del archivo.
+#' @return La ruta con \code{/} como separador.
+#' @keywords internal
+ruta_para_codigo <- function(ruta) {
+  gsub("\\", "/", ruta, fixed = TRUE)
 }
 
 # Nota: %||% ya esta definido en ai_interface.R y se reutiliza aqui
@@ -182,7 +204,7 @@ code_select <- function(p) {
 }
 
 code_filter <- function(p) {
-  value_str <- format_value_for_code(p$value)
+  value_str <- format_value_for_code(p$value, p$numeric)
   col       <- safe_col(p$col)
   as.character(glue::glue("dplyr::filter({col} {p$op} {value_str})"))
 }
@@ -244,7 +266,8 @@ code_recode <- function(p) {
     new_val <- gsub("\u201c|\u201d", '"', new_val)
     new_val <- gsub("\u2018|\u2019", "'", new_val)
     as.character(glue::glue(
-      "{col} == {format_value_for_code(old_val)} ~ {format_value_for_code(new_val)}"
+      # El valor nuevo siempre es texto: la recodificacion devuelve texto
+      "{col} == {format_value_for_code(old_val, p$numeric)} ~ {format_value_for_code(new_val, FALSE)}"
     ))
   }, character(1))
   cases_str <- paste(cases, collapse = ",\n      ")
@@ -267,10 +290,67 @@ code_join <- function(p) {
     by_str <- if (length(by) == 1) paste0('"', by, '"')
               else paste0('c(', paste(paste0('"', by, '"'), collapse = ', '), ')')
   }
-  as.character(glue::glue("{join_fn}({p$right_df}, by = {by_str})"))
+
+  # Tabla derecha: columnas elegidas y conversiones de clave
+  right <- p$right_df
+  if (!is.null(p$right_cols)) {
+    keep  <- unique(c(unname(by), p$right_cols))
+    right <- paste0(right, " |> dplyr::select(",
+                    paste(vapply(keep, safe_col, character(1)), collapse = ", "), ")")
+  }
+  right_cast <- code_join_casts(p$key_casts, "right")
+  if (!is.null(right_cast)) right <- paste0(right, " |> ", right_cast)
+
+  join_line <- as.character(glue::glue("{join_fn}({right}, by = {by_str})"))
+  left_cast <- code_join_casts(p$key_casts, "left")
+  if (is.null(left_cast)) join_line else paste0(left_cast, " |>\n  ", join_line)
 }
 
-format_value_for_code <- function(value) {
-  if (!is.na(suppressWarnings(as.numeric(value)))) as.character(value)
-  else paste0('"', value, '"')
+# Linea dplyr::mutate() que convierte a numero las claves de un lado
+code_join_casts <- function(casts, side) {
+  cols <- unlist(lapply(casts, function(cs) if (identical(cs$side, side)) cs$col))
+  if (length(cols) == 0) return(NULL)
+  asig <- vapply(cols, function(cl) {
+    sc <- safe_col(cl)
+    paste0(sc, " = as.numeric(as.character(", sc, "))")
+  }, character(1))
+  paste0("dplyr::mutate(", paste(asig, collapse = ", "), ")")
+}
+
+#' Pasos de carga de los segundos datasets de los joins
+#'
+#' @param ops Lista de operaciones.
+#' @param df_name Nombre del dataset principal (no se repite su carga).
+#' @return Character vector con un paso de carga por dataset (sin
+#'   duplicados); vacio si ningun join registra el origen de su tabla.
+#' @keywords internal
+generate_join_load_steps <- function(ops, df_name = NULL) {
+  vistos <- character(0)
+  pasos  <- character(0)
+  for (op in ops) {
+    if (!identical(op$type, "join")) next
+    nm  <- op$params$right_df
+    src <- op$params$right_source
+    if (is.null(src) || nm %in% c(vistos, df_name)) next
+    paso <- generate_load_step(nm, src)
+    vistos <- c(vistos, nm)
+    if (!is.null(paso)) pasos <- c(pasos, paso)
+  }
+  pasos
+}
+
+#' Escribir un valor como literal de R
+#'
+#' @param value Valor (texto o numero).
+#' @param numeric \code{TRUE}: numero sin comillas; \code{FALSE}: texto
+#'   entre comillas aunque parezca un numero ("01" sigue siendo "01");
+#'   \code{NULL}: se deduce del valor (comportamiento anterior).
+#' @return String con el literal.
+#' @keywords internal
+format_value_for_code <- function(value, numeric = NULL) {
+  if (is.null(numeric))
+    numeric <- !is.na(suppressWarnings(as.numeric(value)))
+  es_numero <- !is.na(suppressWarnings(as.numeric(value)))
+  if (isTRUE(numeric) && es_numero) as.character(value)
+  else encodeString(as.character(value), quote = '"')
 }

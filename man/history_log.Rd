@@ -2,17 +2,21 @@
 % Please edit documentation in R/config.R
 \name{history_log}
 \alias{history_log}
-\title{Registrar evento en el historial de sesión}
+\title{Registrar un evento en el historial de sesion}
 \usage{
 history_log(history, type, detail = list())
 }
 \arguments{
-\item{history}{reactiveVal que contiene la lista de eventos}
+\item{history}{\code{reactiveVal} que contiene la lista de eventos.}
 
-\item{type}{String identificador del tipo de evento}
+\item{type}{String identificador del tipo de evento.}
 
-\item{detail}{Lista con detalles del evento}
+\item{detail}{Lista con detalles adicionales del evento.}
+}
+\value{
+Invisiblemente el entry creado.
 }
 \description{
-Registrar evento en el historial de sesión
+Registrar un evento en el historial de sesion
 }
+\keyword{internal}

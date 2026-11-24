@@ -2,20 +2,18 @@
 % Please edit documentation in R/mod_code.R
 \name{mod_code_ui}
 \alias{mod_code_ui}
-\title{Módulo: Panel de Código R Generado}
+\title{Modulo: Panel de Codigo R Generado}
 \usage{
 mod_code_ui(id)
 }
 \arguments{
-\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+\item{id}{ID del modulo Shiny.}
+}
+\value{
+Un objeto shiny.tag con la UI del panel de codigo.
 }
 \description{
-Muestra en tiempo real el código R producido por el constructor visual.
-Permite:
-\itemize{
-\item Copiar al portapapeles
-\item Insertar en el script activo de RStudio
-\item Ejecutar directamente
-\item Guardar como archivo .R
-}
+Muestra el codigo R producido por el Constructor en tiempo real.
+Permite copiar, insertar en script, ejecutar, guardar como .R
+y exportar el resultado a CSV o Excel.
 }

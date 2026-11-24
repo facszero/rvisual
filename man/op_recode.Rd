@@ -2,15 +2,24 @@
 % Please edit documentation in R/operation_model.R
 \name{op_recode}
 \alias{op_recode}
-\title{Crear operación: recode}
+\title{Crear operacion: recodificar valores}
 \usage{
-op_recode(col, mapping)
+op_recode(col, mapping, numeric = NULL)
 }
 \arguments{
-\item{col}{Columna a recodificar}
+\item{col}{Nombre de la columna a recodificar.}
 
-\item{mapping}{Lista nombrada: valor_original = valor_nuevo}
+\item{mapping}{Lista nombrada con los reemplazos:
+\code{list(valor_original = valor_nuevo)}.}
+
+\item{numeric}{\code{TRUE} si la columna es numerica; \code{FALSE} si
+no (los valores originales van entre comillas en el codigo).
+\code{NULL} lo deduce de cada valor, como antes.}
+}
+\value{
+Lista de operacion con type="recode".
 }
 \description{
-Crear operación: recode
+Crear operacion: recodificar valores
 }
+\keyword{internal}

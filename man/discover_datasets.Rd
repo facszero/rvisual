@@ -2,15 +2,17 @@
 % Please edit documentation in R/dataset_discovery.R
 \name{discover_datasets}
 \alias{discover_datasets}
-\title{Descubrimiento de datasets, metadatos y carga de archivos
-Listar data.frames disponibles en el entorno global}
+\title{Listar data.frames en el entorno global}
 \usage{
-discover_datasets()
+discover_datasets(env = globalenv())
+}
+\arguments{
+\item{env}{Entorno donde buscar (por defecto, el global).}
 }
 \value{
-Lista de listas con name, nrow, ncol por cada dataset
+Lista de listas, cada una con \code{name}, \code{nrow}, \code{ncol}.
 }
 \description{
-Descubrimiento de datasets, metadatos y carga de archivos
-Listar data.frames disponibles en el entorno global
+Listar data.frames en el entorno global
 }
+\keyword{internal}

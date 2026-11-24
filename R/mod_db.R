@@ -243,7 +243,8 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv, active_s
     shiny::observeEvent(input$tipo, {
       puertos <- c(postgresql = 5432, mysql = 3306, sqlserver = 1433,
                    oracle = 1521, db2 = 50000)
-      p <- puertos[[input$tipo]]
+      # SQLite no tiene puerto: `[[` con un nombre inexistente cortaria la sesion
+      p <- if (input$tipo %in% names(puertos)) puertos[[input$tipo]] else NA
       if (!is.na(p)) shiny::updateNumericInput(session, "port", value = p)
 
       # Cargar ultima config guardada para este motor
@@ -458,9 +459,12 @@ mod_db_server <- function(id, active_dataset, active_name, datasets_rv, active_s
     })
 
     # ── Cerrar conexi\u00f3n al destruir el m\u00f3dulo (limpieza) ─────────────────
+    # onStop corre fuera de un contexto reactivo: leer el reactiveVal con
+    # isolate(), de lo contrario falla y la conexion queda abierta.
     shiny::onStop(function() {
-      if (!is.null(con_activa())) {
-        tryCatch(DBI::dbDisconnect(con_activa()), error = function(e) NULL)
+      con <- shiny::isolate(con_activa())
+      if (!is.null(con)) {
+        tryCatch(DBI::dbDisconnect(con), error = function(e) NULL)
       }
     })
 

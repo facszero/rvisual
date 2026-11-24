@@ -2,18 +2,21 @@
 % Please edit documentation in R/dataset_discovery.R
 \name{get_metadata}
 \alias{get_metadata}
-\title{Extraer metadatos estructurados de un data.frame}
+\title{Extraer metadatos de un data.frame}
 \usage{
 get_metadata(df, name = "dataset")
 }
 \arguments{
-\item{df}{Data.frame}
+\item{df}{Data.frame a analizar.}
 
-\item{name}{Nombre del objeto (para display)}
+\item{name}{Nombre del objeto para display.}
 }
 \value{
-Lista con nrow, ncol, columns (data.frame con info de cada columna)
+Lista con \code{name}, \code{nrow}, \code{ncol} y \code{columns}
+(data.frame con info de cada variable).
 }
 \description{
-Extraer metadatos estructurados de un data.frame
+Devuelve informacion sobre dimensiones y tipos de cada columna,
+util para construir el contexto del Asistente IA y el panel Explorador.
 }
+\keyword{internal}

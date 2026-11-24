@@ -2,13 +2,16 @@
 % Please edit documentation in R/mod_builder.R
 \name{mod_builder_ui}
 \alias{mod_builder_ui}
-\title{Módulo: Constructor Visual de Operaciones}
+\title{Modulo: Constructor Visual de Operaciones}
 \usage{
 mod_builder_ui(id)
 }
 \arguments{
-\item{id}{ID del módulo Shiny (string). Usado internamente por \code{NS()} para crear el namespace del módulo.}
+\item{id}{ID del modulo Shiny.}
+}
+\value{
+Un objeto shiny.tag con la UI del constructor.
 }
 \description{
-Módulo: Constructor Visual de Operaciones
+Modulo: Constructor Visual de Operaciones
 }

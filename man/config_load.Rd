@@ -2,13 +2,14 @@
 % Please edit documentation in R/config.R
 \name{config_load}
 \alias{config_load}
-\title{Cargar configuración guardada}
+\title{Cargar configuracion guardada}
 \usage{
 config_load()
 }
 \value{
-Lista de configuración o lista vacía
+Lista de configuracion, o lista vacia si no existe.
 }
 \description{
-Cargar configuración guardada
+Cargar configuracion guardada
 }
+\keyword{internal}

@@ -307,20 +307,20 @@ test_that("get_metadata clasifica tipos visuales correctamente", {
 # ══════════════════════════════════════════════════════════════════════════
 # discover_datasets
 # ══════════════════════════════════════════════════════════════════════════
-test_that("discover_datasets encuentra data.frames en .GlobalEnv", {
-  assign("__rvisual_test_df__", make_df(), envir = .GlobalEnv)
-  on.exit(rm("__rvisual_test_df__", envir = .GlobalEnv))
+test_that("discover_datasets encuentra data.frames en el entorno", {
+  env <- new.env()
+  assign("__rvisual_test_df__", make_df(), envir = env)
 
-  found <- discover_datasets()
+  found <- discover_datasets(env)
   nms   <- vapply(found, function(d) d$name, character(1))
   expect_true("__rvisual_test_df__" %in% nms)
 })
 
 test_that("discover_datasets ignora no data.frames", {
-  assign("__rvisual_test_vec__", 1:10, envir = .GlobalEnv)
-  on.exit(rm("__rvisual_test_vec__", envir = .GlobalEnv))
+  env <- new.env()
+  assign("__rvisual_test_vec__", 1:10, envir = env)
 
-  found <- discover_datasets()
+  found <- discover_datasets(env)
   nms   <- vapply(found, function(d) d$name, character(1))
   expect_false("__rvisual_test_vec__" %in% nms)
 })

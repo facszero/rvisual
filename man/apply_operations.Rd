@@ -2,18 +2,20 @@
 % Please edit documentation in R/operation_model.R
 \name{apply_operations}
 \alias{apply_operations}
-\title{Aplicar una lista de operaciones a un data.frame}
+\title{Aplicar stack de operaciones a un data.frame}
 \usage{
 apply_operations(df, ops)
 }
 \arguments{
-\item{df}{Data.frame base}
+\item{df}{Data.frame base.}
 
-\item{ops}{Lista de operaciones (output de op_* functions)}
+\item{ops}{Lista de operaciones generadas por las funciones \code{op_*}.}
 }
 \value{
-Data.frame transformado
+Data.frame transformado.
 }
 \description{
-Aplicar una lista de operaciones a un data.frame
+Ejecuta secuencialmente una lista de operaciones sobre un data.frame,
+retornando el resultado transformado.
 }
+\keyword{internal}

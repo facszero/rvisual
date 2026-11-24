@@ -7,10 +7,10 @@
 rvisual_server(input, output, session)
 }
 \arguments{
-\item{input, output, session}{Parámetros estándar de Shiny server}
+\item{input, output, session}{Parametros estandar de Shiny server}
 }
 \description{
-Orquesta todos los módulos Shiny.
-El estado compartido entre módulos se gestiona a través de \code{reactives}
-pasados como argumentos — no mediante variables globales.
+Orquesta todos los modulos Shiny.
+El estado compartido entre modulos se gestiona a traves de \code{reactives}
+pasados como argumentos - no mediante variables globales.
 }

@@ -2,13 +2,17 @@
 % Please edit documentation in R/config.R
 \name{config_save}
 \alias{config_save}
-\title{Guardar configuración}
+\title{Guardar configuracion del usuario}
 \usage{
 config_save(cfg)
 }
 \arguments{
-\item{cfg}{Lista de configuración}
+\item{cfg}{Lista con los campos de configuracion.}
+}
+\value{
+Invisiblemente \code{cfg}.
 }
 \description{
-Guardar configuración
+Guardar configuracion del usuario
 }
+\keyword{internal}

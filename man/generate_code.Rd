@@ -2,32 +2,28 @@
 % Please edit documentation in R/code_generator.R
 \name{generate_code}
 \alias{generate_code}
-\title{Generador de Código R}
+\title{Generar codigo R desde un stack de operaciones}
 \usage{
-generate_code(df_name, ops, assign_to = NULL)
+generate_code(df_name, ops, assign_to = NULL, source = NULL)
 }
 \arguments{
-\item{df_name}{Nombre del objeto R que contiene el dataset}
+\item{df_name}{Nombre del objeto R que contiene el dataset.}
 
-\item{ops}{Lista de operaciones (output de op_* functions)}
+\item{ops}{Lista de operaciones generadas por las funciones \code{op_*}.}
 
-\item{assign_to}{Si no es NULL, el resultado se asigna a este nombre}
+\item{assign_to}{Si no es \code{NULL}, el resultado se asigna a este
+nombre de variable.}
+
+\item{source}{Lista con metadatos del origen del dataset (ver
+\code{generate_load_step}). Si no es \code{NULL}, el codigo generado
+incluye el paso de carga correspondiente, de forma que el script sea
+ejecutable de forma standalone (sin depender de que el addin este
+activo ni de ningun entorno interno).}
 }
 \value{
-String con código R formateado
+String con codigo R formateado y listo para ejecutar.
 }
 \description{
-Convierte un stack de operaciones (lista de objetos op_*) en
-código R limpio, legible y reproducible usando tidyverse (dplyr/tidyr).
+Generar codigo R desde un stack de operaciones
 }
-\details{
-Estrategia de generación:
-\itemize{
-\item Una operación por línea del pipe
-\item Pipe nativo (|>) con R >= 4.1
-\item Convenciones tidyverse: snake_case, nombres explícitos
-\item Comentarios explicativos cuando la operación es compleja
-\item Código legible para usuarios en transición desde SPSS
-Generar código R desde nombre de dataset y stack de operaciones
-}
-}
+\keyword{internal}

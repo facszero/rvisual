@@ -33,15 +33,21 @@ op_select <- function(cols) {
 #' @param col Nombre de la columna a filtrar.
 #' @param op Operador de comparacion: "==", "!=", ">", "<", ">=", "<=".
 #' @param value Valor de comparacion.
+#' @param numeric \code{TRUE} si la columna es numerica (el valor va sin
+#'   comillas en el codigo), \code{FALSE} si es texto, factor, logica o
+#'   fecha (el valor va entre comillas aunque parezca un numero, como
+#'   "01"). \code{NULL} lo deduce del valor, como antes de existir este
+#'   argumento.
 #' @return Lista de operacion con type="filter".
 #' @examples
 #' op <- rvisual:::op_filter("anio", "==", 2024)
+#' op <- rvisual:::op_filter("division", "==", "01", numeric = FALSE)
 #' @keywords internal
-op_filter <- function(col, op, value) {
+op_filter <- function(col, op, value, numeric = NULL) {
   stopifnot(is.character(col), op %in% c("==", "!=", ">", "<", ">=", "<="))
   list(type = "filter",
        label = glue::glue("Filtrar: {col} {op} {value}"),
-       params = list(col = col, op = op, value = value),
+       params = list(col = col, op = op, value = value, numeric = numeric),
        created_at = Sys.time())
 }
 
@@ -102,27 +108,119 @@ op_rename <- function(old_name, new_name) {
 #' @param col Nombre de la columna a recodificar.
 #' @param mapping Lista nombrada con los reemplazos:
 #'   \code{list(valor_original = valor_nuevo)}.
+#' @param numeric \code{TRUE} si la columna es numerica; \code{FALSE} si
+#'   no (los valores originales van entre comillas en el codigo).
+#'   \code{NULL} lo deduce de cada valor, como antes.
 #' @return Lista de operacion con type="recode".
 #' @keywords internal
-op_recode <- function(col, mapping) {
+op_recode <- function(col, mapping, numeric = NULL) {
   list(type = "recode",
        label = glue::glue("Recodificar: {col} ({length(mapping)} valores)"),
-       params = list(col = col, mapping = mapping),
+       params = list(col = col, mapping = mapping, numeric = numeric),
        created_at = Sys.time())
 }
 
 #' Crear operacion: unir tablas
-#' @param right_df_name Nombre del segundo data.frame (debe existir en
-#'   \code{.GlobalEnv}).
-#' @param by_cols Character vector con las columnas clave del join.
+#' @param right_df_name Nombre del segundo data.frame: uno cargado en
+#'   RVisual o uno del entorno global de R (ver \code{rvisual_find_dataset}).
+#' @param by_cols Character vector con las columnas clave del join. Si tiene
+#'   nombres, el nombre es la columna de la tabla izquierda y el valor la de
+#'   la tabla derecha.
 #' @param join_type Tipo de join: "left", "right", "inner", "full".
+#' @param right_cols Columnas (no clave) a traer de la tabla derecha.
+#'   \code{NULL} trae todas.
+#' @param key_casts Conversiones de tipo de las claves, tal como las devuelve
+#'   \code{join_key_check}: lista de \code{list(side, col)}; la columna se
+#'   convierte a numero. \code{NULL} no convierte nada.
+#' @param right_source Origen del segundo dataset (ver
+#'   \code{generate_load_step}), para incluir su paso de carga en el codigo.
 #' @return Lista de operacion con type="join".
 #' @keywords internal
-op_join <- function(right_df_name, by_cols, join_type = "left") {
+op_join <- function(right_df_name, by_cols, join_type = "left",
+                    right_cols = NULL, key_casts = NULL, right_source = NULL) {
   list(type = "join",
        label = glue::glue("{join_type}_join con {right_df_name} por {paste(by_cols, collapse=', ')}"),
-       params = list(right_df = right_df_name, by = by_cols, type = join_type),
+       params = list(right_df = right_df_name, by = by_cols, type = join_type,
+                     right_cols = right_cols, key_casts = key_casts,
+                     right_source = right_source),
        created_at = Sys.time())
+}
+
+#' Verificar que las claves de un join tengan tipos compatibles
+#'
+#' Compara el tipo de cada par de columnas clave. Si una es numerica y la
+#' otra es texto con solo numeros (por ejemplo "0611100701"), propone
+#' convertir la de texto a numero. Cualquier otra combinacion distinta se
+#' informa como incompatible.
+#'
+#' @param left,right Data.frames izquierdo y derecho.
+#' @param by Character vector de claves (con nombres = columnas izquierdas).
+#' @return Lista con \code{ok} (logico), \code{casts} (lista de
+#'   \code{list(side, col)}) y \code{messages} (texto para el usuario).
+#' @keywords internal
+join_key_check <- function(left, right, by) {
+  lcols <- if (is.null(names(by))) by else ifelse(nzchar(names(by)), names(by), by)
+  rcols <- unname(by)
+  familia <- function(x) {
+    if (is.factor(x) || is.character(x)) "texto"
+    else if (inherits(x, c("Date", "POSIXt"))) "fecha"
+    else if (is.logical(x)) "logico"
+    else if (is.numeric(x)) "n\u00famero"
+    else class(x)[1]
+  }
+  solo_numeros <- function(x) {
+    x <- as.character(x)
+    x <- x[!is.na(x) & nzchar(trimws(x))]
+    length(x) > 0 &&
+      all(grepl("^\\s*[-+]?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?\\s*$", x))
+  }
+  ok <- TRUE
+  casts <- list()
+  msgs <- character(0)
+  for (i in seq_along(lcols)) {
+    lc <- lcols[i]
+    rc <- rcols[i]
+    if (!lc %in% names(left)) {
+      ok <- FALSE
+      msgs <- c(msgs, paste0("La columna '", lc, "' no est\u00e1 en la tabla izquierda."))
+      next
+    }
+    if (!rc %in% names(right)) {
+      ok <- FALSE
+      msgs <- c(msgs, paste0("La columna '", rc, "' no est\u00e1 en la tabla derecha."))
+      next
+    }
+    fl <- familia(left[[lc]])
+    fr <- familia(right[[rc]])
+    if (identical(fl, fr)) next
+    if (setequal(c(fl, fr), c("n\u00famero", "texto"))) {
+      lado <- if (fl == "texto") "left" else "right"
+      col  <- if (lado == "left") lc else rc
+      vals <- if (lado == "left") left[[lc]] else right[[rc]]
+      if (solo_numeros(vals)) {
+        casts[[length(casts) + 1]] <- list(side = lado, col = col)
+        msgs <- c(msgs, paste0(
+          "'", lc, "' es ", fl, " y '", rc, "' es ", fr, ": se convertir\u00e1 '",
+          col, "' (tabla ", if (lado == "left") "izquierda" else "derecha",
+          ") a n\u00famero."))
+        next
+      }
+    }
+    ok <- FALSE
+    msgs <- c(msgs, paste0(
+      "'", lc, "' es ", fl, " y '", rc, "' es ", fr,
+      ": no se pueden unir. Convert\u00ed una de las dos con 'Crear variable'."))
+  }
+  list(ok = ok, casts = casts, messages = msgs)
+}
+
+# Aplica las conversiones de clave de un lado del join
+join_apply_casts <- function(df, casts, side) {
+  for (cs in casts) {
+    if (identical(cs$side, side) && cs$col %in% names(df))
+      df[[cs$col]] <- as.numeric(as.character(df[[cs$col]]))
+  }
+  df
 }
 
 #' Aplicar stack de operaciones a un data.frame
@@ -145,7 +243,10 @@ apply_single_operation <- function(df, op) {
   switch(op$type,
     "select" = dplyr::select(df, dplyr::all_of(op$params$cols)),
     "filter" = {
-      expr_text <- build_filter_expr(op$params$col, op$params$op, op$params$value)
+      # El tipo real de la columna decide si el valor es numero o texto
+      col <- op$params$col
+      numeric <- if (col %in% names(df)) is.numeric(df[[col]]) else op$params$numeric
+      expr_text <- build_filter_expr(col, op$params$op, op$params$value, numeric)
       dplyr::filter(df, eval(parse(text = expr_text)))
     },
     "arrange" = {
@@ -200,7 +301,14 @@ apply_single_operation <- function(df, op) {
       df
     },
     "join" = {
-      right_df <- get(op$params$right_df, envir = .GlobalEnv)
+      p        <- op$params
+      right_df <- rvisual_find_dataset(p$right_df)
+      if (!is.null(p$right_cols)) {
+        keep     <- unique(c(unname(p$by), p$right_cols))
+        right_df <- right_df[, intersect(keep, names(right_df)), drop = FALSE]
+      }
+      df       <- join_apply_casts(df, p$key_casts, "left")
+      right_df <- join_apply_casts(right_df, p$key_casts, "right")
       join_fn  <- switch(op$params$type,
         "left"  = dplyr::left_join,  "right" = dplyr::right_join,
         "inner" = dplyr::inner_join, "full"  = dplyr::full_join,
@@ -211,8 +319,6 @@ apply_single_operation <- function(df, op) {
   )
 }
 
-build_filter_expr <- function(col, op, value) {
-  value_str <- if (!is.na(suppressWarnings(as.numeric(value))))
-    as.character(value) else paste0('"', value, '"')
-  paste0(".data[['", col, "']] ", op, " ", value_str)
+build_filter_expr <- function(col, op, value, numeric = NULL) {
+  paste0(".data[['", col, "']] ", op, " ", format_value_for_code(value, numeric))
 }

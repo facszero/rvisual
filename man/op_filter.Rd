@@ -2,17 +2,31 @@
 % Please edit documentation in R/operation_model.R
 \name{op_filter}
 \alias{op_filter}
-\title{Crear operación: filter}
+\title{Crear operacion: filtrar registros}
 \usage{
-op_filter(col, op, value)
+op_filter(col, op, value, numeric = NULL)
 }
 \arguments{
-\item{col}{Nombre de columna}
+\item{col}{Nombre de la columna a filtrar.}
 
-\item{op}{Operador: "==", "!=", ">", "<", ">=", "<="}
+\item{op}{Operador de comparacion: "==", "!=", ">", "<", ">=", "<=".}
 
-\item{value}{Valor de comparación}
+\item{value}{Valor de comparacion.}
+
+\item{numeric}{\code{TRUE} si la columna es numerica (el valor va sin
+comillas en el codigo), \code{FALSE} si es texto, factor, logica o
+fecha (el valor va entre comillas aunque parezca un numero, como
+"01"). \code{NULL} lo deduce del valor, como antes de existir este
+argumento.}
+}
+\value{
+Lista de operacion con type="filter".
 }
 \description{
-Crear operación: filter
+Crear operacion: filtrar registros
 }
+\examples{
+op <- rvisual:::op_filter("anio", "==", 2024)
+op <- rvisual:::op_filter("division", "==", "01", numeric = FALSE)
+}
+\keyword{internal}

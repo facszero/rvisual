@@ -17,9 +17,10 @@ RVisual es un addin para RStudio que permite a usuarios con experiencia en SPSS 
 
 ### Características principales
 
-* **Panel Dataset** — Carga archivos (CSV, Excel, RDS, SAV hasta 50 MB) y detecta data.frames en memoria
+* **Panel Dataset** — Carga archivos (CSV, Excel, RDS, SAV hasta 50 MB) y detecta data.frames en memoria. Incluye un juego de datos de ejemplo sintético (`inst/extdata`, ver `LEEME.md`)
 * **Explorador** — Vista tabular, tipos de variables, estadísticas rápidas
 * **Constructor Visual** — Filtros, selección, ordenamiento, agrupación, nuevas variables, recodificación y joins con mouse
+* **Modelado (ML)** — Asistente de Machine Learning (regresión y clasificación): diagnóstico del dataset, comparación de modelos con validación cruzada y modelo final, todo como script reproducible. Ver `vignette("modelado", package = "rvisual")`
 * **Panel de Código R** — Código generado en tiempo real, ejecutable con resultado inline
 * **Asistente IA** — Copiloto contextual multi-proveedor (Anthropic, OpenAI, Gemini)
 * **Configuración** — Gestión de API keys y preferencias de privacidad
@@ -101,6 +102,12 @@ rvisual/
 │   ├── mod_dataset.R        # Panel: Datos
 │   ├── mod_explorer.R       # Panel: Explorador
 │   ├── mod_builder.R        # Panel: Constructor visual
+│   ├── mod_ml.R             # Panel: Modelado (ML)
+│   ├── ml_spec.R            # Especificación del modelado y validación
+│   ├── ml_engines.R         # Catálogo de modelos
+│   ├── ml_diagnostics.R     # Diagnóstico del dataset
+│   ├── ml_codegen.R         # Generación del script de modelado
+│   ├── ml_run.R             # Ejecución aislada del script
 │   ├── mod_code.R           # Panel: Código R
 │   ├── mod_ai.R             # Panel: Asistente IA
 │   ├── mod_config.R         # Panel: Configuración
@@ -110,8 +117,8 @@ rvisual/
 │   ├── dataset_discovery.R  # Metadatos y carga de archivos
 │   ├── rstudio_bridge.R     # Integración con RStudio API
 │   └── config.R             # Configuración persistente
-└── tests/testthat/
-    └── test-core.R          # 47 tests unitarios
+├── inst/extdata/            # Datos de ejemplo ech_sintetica (CSV, Excel, RDS, SAV, SQLite)
+└── tests/testthat/          # Tests unitarios y de integración
 ```
 
 ### Principio de diseño central
@@ -132,7 +139,8 @@ Acción visual → operation_model → code_generator → código R limpio
 | 4 | Generación de código + ejecución | ✅ Completo |
 | 5 | Integración IA multi-proveedor | ✅ Completo |
 | 6 | Guardar archivos + exportar resultados | ✅ Completo |
-| 7 | UX, testing completo, CRAN | 🔲 Pendiente |
+| 7 | UX, testing completo, CRAN | ✅ Completo (0.1.1 en CRAN) |
+| 8 | Módulo de Machine Learning — fase 1 | ✅ Completo (0.3.0) |
 
 ---
 

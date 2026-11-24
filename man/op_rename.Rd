@@ -2,15 +2,19 @@
 % Please edit documentation in R/operation_model.R
 \name{op_rename}
 \alias{op_rename}
-\title{Crear operación: rename}
+\title{Crear operacion: renombrar columna}
 \usage{
 op_rename(old_name, new_name)
 }
 \arguments{
-\item{old_name}{Nombre actual de la columna}
+\item{old_name}{Nombre actual de la columna.}
 
-\item{new_name}{Nuevo nombre}
+\item{new_name}{Nuevo nombre.}
+}
+\value{
+Lista de operacion con type="rename".
 }
 \description{
-Crear operación: rename
+Crear operacion: renombrar columna
 }
+\keyword{internal}

@@ -2,18 +2,19 @@
 % Please edit documentation in R/dataset_discovery.R
 \name{load_file}
 \alias{load_file}
-\title{Cargar un archivo de datos según su extensión}
+\title{Cargar un archivo de datos}
 \usage{
 load_file(path, extension)
 }
 \arguments{
-\item{path}{Ruta al archivo}
+\item{path}{Ruta al archivo.}
 
-\item{extension}{Extensión sin punto: "csv", "xlsx", "rds", "sav"}
+\item{extension}{Extension sin punto: "csv", "xlsx", "rds", "sav".}
 }
 \value{
-Data.frame o tibble
+Data.frame o tibble con los datos cargados.
 }
 \description{
-Cargar un archivo de datos según su extensión
+Cargar un archivo de datos
 }
+\keyword{internal}

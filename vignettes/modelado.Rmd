@@ -1,0 +1,159 @@
+---
+title: "Modelado (Machine Learning) con RVisual"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Modelado (Machine Learning) con RVisual}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+El panel **Modelado (ML)** guía un flujo de aprendizaje supervisado sobre datos tabulares: diagnosticar el dataset, comparar varios modelos con validación cruzada y entrenar el modelo elegido. Como el resto de RVisual, todo lo que se hace en el panel queda en un **script de R reproducible**, que corre fuera del addin.
+
+El panel no elige el modelo por el usuario. Muestra la comparación contra una línea base y explica cada advertencia; la decisión es del analista.
+
+## Requisitos
+
+El panel usa paquetes que no se instalan con RVisual. Cada modelo indica en el panel si le falta su paquete.
+
+```{r}
+install.packages(c("rpart", "ranger", "glmnet", "pROC"))
+# Opcional:
+install.packages("xgboost")   # versión 3.2.1.1 o posterior
+```
+
+| Modelo | Paquete | Regresión | Clasificación binaria | Multiclase |
+| --- | --- | --- | --- | --- |
+| Línea base (media / clase mayoritaria) | — | ✓ | ✓ | ✓ |
+| Regresión lineal | stats | ✓ | | |
+| Regresión logística | stats | | ✓ | |
+| Elastic net | glmnet | ✓ | ✓ | ✓ |
+| Árbol de decisión | rpart | ✓ | ✓ | ✓ |
+| Random Forest | ranger | ✓ | ✓ | ✓ |
+| Gradient boosting | xgboost (>= 3.2.1.1) | ✓ | ✓ | ✓ |
+
+La curva ROC y la AUC de la clasificación binaria usan `pROC`.
+
+## Datos de ejemplo
+
+RVisual incluye un juego de datos sintético, `ech_sintetica`, pensado para practicar con todos los paneles. Su diccionario y una lista de ejercicios están en `LEEME.md`, en la misma carpeta:
+
+```{r}
+system.file("extdata", "ech_sintetica.rds", package = "rvisual")
+system.file("extdata", "LEEME.md", package = "rvisual")
+```
+
+Los ejemplos de esta guía usan ese dataset, cargado en el panel Dataset con el nombre `ech`.
+
+## Los seis pasos
+
+### 1. Objetivo
+
+Se elige la **variable objetivo** y los **predictores** (por defecto, todas las demás columnas). El tipo de tarea se detecta solo y se puede corregir:
+
+- numérica con más de dos valores → **regresión**;
+- dos valores distintos → **clasificación binaria** (se elige la clase positiva; por defecto `Si`, `Yes`, `1` o `TRUE` si existe);
+- texto o factor con 3 a 50 valores → **clasificación multiclase**.
+
+Si en el Constructor hay operaciones (por ejemplo, un filtro), el modelo usa el dataset ya transformado, y el script las incluye.
+
+Ejemplo: objetivo `ocupado`, clase positiva `Si`.
+
+### 2. Diagnóstico
+
+Un conjunto fijo de reglas revisa el dataset. Cada hallazgo muestra el dato que lo disparó y el umbral:
+
+| Hallazgo | Qué hace RVisual |
+| --- | --- |
+| Identificador (un valor distinto por fila) | Lo excluye por defecto |
+| Variable con más de 50 categorías | La excluye por defecto |
+| Variable con más de 40% de NA | La excluye por defecto |
+| **Posible fuga de información** | La excluye por defecto (ver más abajo) |
+| Pocas filas (menos de 200) | Sugiere 10 folds y modelos simples |
+| Muchos términos por fila | Sugiere elastic net |
+| Clases desbalanceadas (minoritaria < 10%) | Recuerda mirar F1-macro y AUC, no la exactitud |
+| Clase con muy pocos casos para los folds | Advierte (crítico) |
+| Muchos ceros en el objetivo (> 30%) | Advierte; el modelo en dos etapas llega en la fase 2 |
+| NA en predictores u objetivo | Informa cuántas filas se pierden |
+
+**Fuga de información.** Un predictor "fuga" cuando contiene la respuesta, en general porque se registra después del hecho que se quiere predecir. En `ech_sintetica`, si el objetivo es `ocupado`, las variables `condicion_actividad`, `rama_actividad`, `horas_trabajadas` e `ingreso_laboral` lo determinan (los no ocupados tienen 0 horas e ingreso 0). Con ellas, cualquier modelo da métricas perfectas que no sirven para nada. RVisual las detecta y las excluye por defecto; se pueden volver a incluir si el dato realmente existe en el momento de predecir.
+
+Con **Aplicar sugerencias** se aplican las exclusiones, los modelos sugeridos y los folds.
+
+### 3. Partición y modelos
+
+- **Proporción de test** (por defecto 25%) y **semilla**. En clasificación, la partición se estratifica por la variable objetivo.
+- **Filas con NA:** eliminarlas, o imputar mediana (numéricas) o moda (categóricas). La imputación se calcula solo con el entrenamiento de cada fold, para no filtrar información de validación o test.
+- **Folds** de validación cruzada (por defecto 5).
+- **Modelos candidatos** e hiperparámetros básicos (en el acordeón de cada modelo).
+
+Los errores y advertencias se muestran mientras se edita. **Ver script** muestra el código que se va a ejecutar.
+
+### 4. Comparación
+
+Cada modelo se entrena y evalúa con validación cruzada **solo sobre el conjunto de entrenamiento**: el test queda reservado. La tabla muestra la media de cada métrica por modelo, y el gráfico muestra la métrica principal en cada fold, para ver la variabilidad.
+
+| Tarea | Métricas (la primera ordena la tabla) |
+| --- | --- |
+| Regresión | RMSE, MAE, R² |
+| Clasificación binaria | AUC, F1-macro, exactitud, sensibilidad, especificidad |
+| Multiclase | F1-macro, exactitud |
+
+La **línea base** siempre está presente: un modelo que no la supera claramente no aporta. El analista elige el modelo final; la interfaz no preselecciona ninguno.
+
+### 5. Modelo final
+
+El modelo elegido se entrena con todo el conjunto de entrenamiento y se evalúa **una sola vez** en test. Se muestran las métricas, la matriz de confusión (clasificación), la curva ROC (binaria) u observado vs. predicho (regresión), y la importancia de variables.
+
+- **Enviar a Código R:** lleva el script completo al panel Código R.
+- **Ejecutar en consola:** corre el script en tu sesión (crea objetos y guarda el modelo en el directorio de trabajo; pide confirmación).
+- **Guardar modelo (.rds)** y **Guardar script (.R)**.
+
+### 6. Aplicar a datos nuevos
+
+Predice con el modelo final sobre otro conjunto de filas y guarda el resultado como un **dataset nuevo** en la pestaña Dataset (el dataset activo no cambia). Se elige:
+
+- **El dataset** sobre el que predecir: el mismo del entrenamiento u otro cargado.
+- **Qué operaciones del Constructor aplicar antes.** Por defecto, todas menos los filtros: los filtros eligieron las filas del entrenamiento y aquí se eligen otras. Un join que trae predictores, en cambio, hace falta.
+- **Un filtro** para las filas a predecir (por ejemplo `A_IMPUTAR == 1` para los precios faltantes).
+- **El nombre** del dataset resultado.
+
+Los datos nuevos se preparan igual que el entrenamiento: mismos tipos, mismos niveles de los factores e imputación (si se eligió) con la referencia del entrenamiento, nunca con los datos nuevos. Una categoría que el modelo no vio, o un NA sin imputar, deja la fila sin predicción; el panel informa cuántas filas quedaron así y por qué variable.
+
+Columnas que se agregan: `pred_<objetivo>` en regresión; `prob_<clase positiva>` y `clase_pred` (umbral 0,5) en clasificación binaria; `prob_<clase>` por cada clase y `clase_pred` en multiclase.
+
+Al aplicar, el script del modelado suma la sección 9, así que **Enviar a Código R**, **Ejecutar en consola** y **Guardar script** reproducen también la predicción. El dataset resultado se puede usar en el Constructor (por ejemplo para comparar contra otro método con *Crear variable* y *Agrupar y resumir*) o exportar desde la pestaña Dataset.
+
+## El script generado
+
+El script es autocontenido y tiene siempre las mismas secciones:
+
+1. Datos: carga (archivo, base de datos o entorno) y operaciones del Constructor.
+2. Preparación: objetivo, predictores, NA, conversión de texto a factor.
+3. Partición entrenamiento / test.
+4. Folds de validación cruzada.
+5. Funciones de métricas.
+6. Modelos candidatos, cada uno con `ajustar(d)` y `predecir(a, nuevos)`.
+7. Comparación por validación cruzada.
+8. Modelo final y evaluación en test.
+9. Aplicación a datos nuevos (solo si se usó el paso 6).
+
+Las métricas que muestra el panel son exactamente las que produce el script: el panel ejecuta el mismo código (sin el paso de carga, porque los datos ya están en memoria). Con la misma semilla, el script da los mismos números.
+
+Para usar el modelo guardado con datos nuevos:
+
+```{r}
+modelo <- readRDS("modelo_ranger.rds")
+# Las columnas de 'nuevos' deben tener el mismo nombre y tipo que en el entrenamiento
+predict(modelo, nuevos)
+```
+
+## Limitaciones de esta versión
+
+- **Pesos de diseño.** Las métricas tratan cada fila por igual. En datos de encuestas con diseño complejo, las métricas sin ponderar pueden sobre o subestimar el error en la población, y un buen desempeño individual no garantiza buenas estimaciones de totales. La incorporación de pesos, estratos y métricas ponderadas está prevista para la fase 2.
+- **Validación temporal.** La validación cruzada es aleatoria. Para series mensuales (entrenar con meses anteriores y evaluar en el siguiente) se prevé una validación temporal en la fase 3.
+- **Modelo en dos etapas** para objetivos con muchos ceros: fase 2.
+- La ejecución dentro del panel bloquea la interfaz mientras dura. Con datasets grandes (más de 100.000 filas) conviene usar **Ejecutar en consola**.

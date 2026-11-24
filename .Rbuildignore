@@ -1,3 +1,5 @@
 ^cran-comments\.md$
 ^\.github$
 ^LICENSE\.md$
+^data-raw$
+^datos-ipc$
