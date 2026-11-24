@@ -189,3 +189,24 @@ test_that("los data.frames del entorno global siguen disponibles para unir", {
   res <- apply_operations(l, list(op_join("tj_global_df", c(id = "id"), "inner")))
   expect_equal(nrow(res), 2)
 })
+
+test_that("'Ninguna' trae solo las claves de la tabla derecha", {
+  assign("tj_der", der(), envir = rvisual_env())
+  on.exit(limpiar("tj_der"))
+  ds    <- shiny::reactiveVal(izq())
+  stack <- shiny::reactiveVal(list())
+  shiny::testServer(mod_builder_server,
+    args = list(active_dataset = ds, active_name = shiny::reactiveVal("tj_izq"),
+                operation_stack = stack, generated_code = shiny::reactiveVal(""),
+                history = shiny::reactiveVal(list())), {
+      session$setInputs(op_join = 1)
+      session$setInputs(join_right_df = "tj_der", join_type = "left",
+                        join_col_left = "mes", join_col_right = "mes")
+      session$setInputs(join_cols_none = 1)
+      expect_true(rv_join$none)
+      session$setInputs(join_right_cols = NULL, confirm_join = 1)
+      p <- stack()[[1]]$params
+      expect_identical(p$right_cols, character(0))
+      expect_match(code_join(p), "tj_der |> dplyr::select(mes)", fixed = TRUE)
+    })
+})
