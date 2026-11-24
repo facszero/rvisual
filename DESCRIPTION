@@ -53,7 +53,8 @@ Suggests:
     ranger,
     xgboost (>= 3.2.1.1),
     pROC,
-    keyring
+    keyring,
+    withr
 Config/testthat/edition: 3
 URL: https://github.com/facszero/rvisual
 BugReports: https://github.com/facszero/rvisual/issues
