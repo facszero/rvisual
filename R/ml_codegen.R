@@ -45,7 +45,8 @@ ml_generate_code <- function(spec, df_name, ops = list(), source = NULL,
     ml_code_metrics(spec$task),
     ml_code_models(spec),
     ml_code_compare(spec),
-    ml_code_final(spec, save_model)
+    ml_code_final(spec, save_model),
+    ml_code_apply(spec, df_name, ops, source)
   )
   paste(sections[nzchar(sections)], collapse = "\n\n")
 }
@@ -510,6 +511,123 @@ ml_code_final <- function(spec, save_model = TRUE) {
     "  # Evaluacion en test: una sola vez, despues de elegir",
     eval_lines,
     if (save_model) "  saveRDS(ajuste_final, paste0(\"modelo_\", modelo_elegido, \".rds\"))",
+    "}"
+  ), collapse = "\n")
+}
+
+#' Especificacion de la aplicacion del modelo a datos nuevos
+#'
+#' @param dataset Nombre del dataset sobre el que se predice.
+#' @param ops_idx Indices de las operaciones del Constructor que se aplican
+#'   a ese dataset antes de predecir (por defecto, ninguna).
+#' @param filter Operacion de filtro adicional (ver \code{op_filter()}) o
+#'   \code{NULL}.
+#' @param output Nombre del dataset resultado.
+#' @param source Origen del dataset (ver \code{generate_load_step()}), para
+#'   el paso de carga cuando no es el dataset del entrenamiento.
+#' @return Lista que se guarda en \code{spec$apply}.
+#' @keywords internal
+ml_apply_spec <- function(dataset, ops_idx = integer(0), filter = NULL,
+                          output = paste0(dataset, "_pred"), source = NULL) {
+  stopifnot(is.character(dataset), length(dataset) == 1, nzchar(dataset),
+            is.character(output), length(output) == 1, nzchar(output))
+  list(dataset = dataset, ops_idx = as.integer(ops_idx), filter = filter,
+       output = output, source = source)
+}
+
+#' Nombres de las columnas que agrega la prediccion
+#' @param spec Especificacion con \code{target}, \code{task} y
+#'   \code{positive}.
+#' @param classes Clases (solo multiclase).
+#' @return Character vector.
+#' @keywords internal
+ml_apply_columns <- function(spec, classes = NULL) {
+  switch(spec$task,
+    regression = paste0("pred_", spec$target),
+    binary     = c(paste0("prob_", spec$positive), "clase_pred"),
+    multiclass = c(paste0("prob_", classes), "clase_pred")
+  )
+}
+
+#' Seccion 9 del script: aplicar el modelo final a datos nuevos
+#'
+#' Prepara los datos nuevos igual que el entrenamiento: mismos tipos, mismos
+#' niveles de los factores (una categoria que el modelo no vio queda como
+#' NA) e imputacion con la referencia del entrenamiento, nunca con los datos
+#' nuevos. Las filas que siguen incompletas quedan sin prediccion (NA).
+#'
+#' @inheritParams ml_generate_code
+#' @return String con la seccion, o \code{""} si \code{spec$apply} o
+#'   \code{spec$final} son \code{NULL}.
+#' @keywords internal
+ml_code_apply <- function(spec, df_name, ops = list(), source = NULL) {
+  ap <- spec$apply
+  if (is.null(ap) || is.null(spec$final)) return("")
+
+  load <- if (!is.null(source) && !identical(ap$dataset, df_name) && !is.null(ap$source))
+    generate_load_step(ap$dataset, ap$source) else NULL
+  sel_ops <- ops[intersect(ap$ops_idx, seq_along(ops))]
+  if (!is.null(ap$filter)) sel_ops <- c(sel_ops, list(ap$filter))
+  lines <- vapply(sel_ops, op_to_code_line, character(1))
+  build <- paste0("nuevos <- ", paste(c(ap$dataset, lines), collapse = " |>\n  "))
+
+  prep <- c(
+    "  nuevos_ml <- nuevos[, predictores, drop = FALSE]",
+    "  # Mismos tipos y niveles que en el entrenamiento (categoria nueva -> NA)",
+    "  for (v in predictores) {",
+    "    ref <- entrenamiento_final[[v]]",
+    "    nuevos_ml[[v]] <- if (is.factor(ref)) {",
+    "      factor(as.character(nuevos_ml[[v]]), levels = levels(ref))",
+    "    } else {",
+    "      as.numeric(nuevos_ml[[v]])",
+    "    }",
+    "  }",
+    if (identical(spec$na_action, "impute_simple"))
+      "  nuevos_ml <- imputar_simple(nuevos_ml, entrenamiento_final)",
+    "  # Columna auxiliar: la formula del modelo nombra al objetivo",
+    "  nuevos_ml[[objetivo]] <- rep(entrenamiento_final[[objetivo]][1], nrow(nuevos_ml))",
+    "  completos <- stats::complete.cases(nuevos_ml)"
+  )
+  cols <- ml_apply_columns(spec, classes = "CLASE")
+  pred <- switch(spec$task,
+    regression = c(
+      "  pred_nuevos <- rep(NA_real_, nrow(nuevos_ml))",
+      "  if (any(completos)) {",
+      "    pred_nuevos[completos] <- modelos[[modelo_elegido]]$predecir(",
+      "      ajuste_final, nuevos_ml[completos, , drop = FALSE])",
+      "  }",
+      paste0("  nuevos[[", ml_lit(cols[1]), "]] <- pred_nuevos")
+    ),
+    binary = c(
+      "  prob_nuevos <- rep(NA_real_, nrow(nuevos_ml))",
+      "  if (any(completos)) {",
+      "    prob_nuevos[completos] <- modelos[[modelo_elegido]]$predecir(",
+      "      ajuste_final, nuevos_ml[completos, , drop = FALSE])",
+      "  }",
+      paste0("  nuevos[[", ml_lit(cols[1]), "]] <- prob_nuevos"),
+      "  nuevos[[\"clase_pred\"]] <- ifelse(prob_nuevos >= 0.5, positiva, negativa)"
+    ),
+    multiclass = c(
+      "  prob_nuevos <- matrix(NA_real_, nrow(nuevos_ml), length(clases),",
+      "                        dimnames = list(NULL, clases))",
+      "  if (any(completos)) {",
+      "    prob_nuevos[completos, ] <- modelos[[modelo_elegido]]$predecir(",
+      "      ajuste_final, nuevos_ml[completos, , drop = FALSE])",
+      "  }",
+      "  for (cl in clases) nuevos[[paste0(\"prob_\", cl)]] <- prob_nuevos[, cl]",
+      "  nuevos[[\"clase_pred\"]] <- ifelse(completos, as.character(clase_predicha(prob_nuevos)), NA)"
+    )
+  )
+  paste(c(
+    ml_section("9. Aplicar el modelo a datos nuevos"),
+    load,
+    build,
+    "nuevos <- as.data.frame(nuevos)",
+    "if (!is.null(modelo_elegido)) {",
+    prep,
+    pred,
+    paste0("  ", ap$output, " <- nuevos"),
+    "  cat(\"Predicciones:\", sum(completos), \"de\", nrow(nuevos), \"filas\\n\")",
     "}"
   ), collapse = "\n")
 }

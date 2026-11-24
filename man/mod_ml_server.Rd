@@ -11,7 +11,8 @@ mod_ml_server(
   active_source = NULL,
   operation_stack = NULL,
   generated_code = NULL,
-  parent_session = NULL
+  parent_session = NULL,
+  add_dataset = NULL
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ mod_ml_server(
 \item{generated_code}{reactiveVal del panel Codigo R (o \code{NULL}).}
 
 \item{parent_session}{Sesion principal, para navegar al panel Codigo R.}
+
+\item{add_dataset}{Funcion \code{function(name, data, source)} que agrega
+un dataset nuevo a la lista del panel Dataset (o \code{NULL}).}
 }
 \description{
 Server del modulo Modelado

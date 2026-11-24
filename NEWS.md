@@ -20,6 +20,14 @@
   produce el script.
 * El modelo final se puede enviar al panel Código R, ejecutar en la
   consola o descargar (`.rds`), junto con el script (`.R`).
+* **Aplicar a datos nuevos (paso 6):** predice con el modelo final sobre
+  otro conjunto de filas (otro dataset, o el mismo con otro filtro, como
+  `A_IMPUTAR == 1`) y lo guarda como un dataset nuevo en la pestaña
+  Dataset, sin cambiar el activo. Los datos se preparan igual que el
+  entrenamiento (tipos, niveles de factores, imputación con la referencia
+  del entrenamiento) y el panel informa las filas sin predicción y las
+  categorías no vistas. El script suma la sección 9 con la misma
+  aplicación.
 
 ## Datos de ejemplo
 

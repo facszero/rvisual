@@ -13,12 +13,15 @@ mod_ml_ui(id)
 Un objeto shiny.tag con la UI del panel.
 }
 \description{
-Asistente de cinco pasos: objetivo y variables, diagnostico, particion y
-modelos, comparacion por validacion cruzada y modelo final.
+Asistente de seis pasos: objetivo y variables, diagnostico, particion y
+modelos, comparacion por validacion cruzada, modelo final y aplicacion
+del modelo a datos nuevos.
 }
 \details{
 Solo LEE el estado compartido (dataset activo, su origen y las
-operaciones del Constructor). La unica escritura es
-\code{generated_code}, y solo cuando el usuario pulsa "Enviar a Codigo R".
+operaciones del Constructor). Escribe en dos casos, siempre por accion
+explicita del usuario: \code{generated_code} al pulsar "Enviar a Codigo
+R", y un dataset NUEVO (nunca modifica uno existente) al pulsar
+"Aplicar modelo" en el paso 6.
 }
 \keyword{internal}

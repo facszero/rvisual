@@ -1,11 +1,14 @@
 #' Modulo: Modelado (Machine Learning)
 #'
-#' Asistente de cinco pasos: objetivo y variables, diagnostico, particion y
-#' modelos, comparacion por validacion cruzada y modelo final.
+#' Asistente de seis pasos: objetivo y variables, diagnostico, particion y
+#' modelos, comparacion por validacion cruzada, modelo final y aplicacion
+#' del modelo a datos nuevos.
 #'
 #' Solo LEE el estado compartido (dataset activo, su origen y las
-#' operaciones del Constructor). La unica escritura es
-#' \code{generated_code}, y solo cuando el usuario pulsa "Enviar a Codigo R".
+#' operaciones del Constructor). Escribe en dos casos, siempre por accion
+#' explicita del usuario: \code{generated_code} al pulsar "Enviar a Codigo
+#' R", y un dataset NUEVO (nunca modifica uno existente) al pulsar
+#' "Aplicar modelo" en el paso 6.
 #'
 #' @param id ID del modulo Shiny.
 #' @return Un objeto shiny.tag con la UI del panel.
@@ -57,6 +60,12 @@ mod_ml_ui <- function(id) {
       bslib::nav_panel(
         title = "5. Modelo final", value = "step5",
         shiny::uiOutput(ns("final_ui"))
+      ),
+
+      bslib::nav_panel(
+        title = "6. Aplicar a datos nuevos", value = "step6",
+        shiny::uiOutput(ns("apply_ui")),
+        shiny::uiOutput(ns("apply_result_ui"))
       )
     )
   )
@@ -72,10 +81,12 @@ mod_ml_ui <- function(id) {
 #'   (solo lectura; o \code{NULL}).
 #' @param generated_code reactiveVal del panel Codigo R (o \code{NULL}).
 #' @param parent_session Sesion principal, para navegar al panel Codigo R.
+#' @param add_dataset Funcion \code{function(name, data, source)} que agrega
+#'   un dataset nuevo a la lista del panel Dataset (o \code{NULL}).
 #' @keywords internal
 mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
                           operation_stack = NULL, generated_code = NULL,
-                          parent_session = NULL) {
+                          parent_session = NULL, add_dataset = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -84,6 +95,7 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
     run_spec       <- shiny::reactiveVal(NULL)
     run_result     <- shiny::reactiveVal(NULL)
     final_result   <- shiny::reactiveVal(NULL)
+    apply_result   <- shiny::reactiveVal(NULL)
 
     ops <- shiny::reactive({
       if (is.null(operation_stack)) list() else operation_stack()
@@ -103,6 +115,7 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       run_spec(NULL)
       run_result(NULL)
       final_result(NULL)
+      apply_result(NULL)
     }
 
     go_to <- function(step) bslib::nav_select("steps", step, session = session)
@@ -438,6 +451,7 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       })
       if (isTRUE(r$ok)) {
         final_result(list(spec = spec, result = r))
+        apply_result(NULL)
         go_to("step5")
       } else {
         shiny::showNotification(r$error, type = "error", duration = 10)
@@ -475,9 +489,14 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
           shiny::downloadButton(ns("dl_model"), "Guardar modelo (.rds)",
                                 class = "btn-outline-primary"),
           shiny::downloadButton(ns("dl_script"), "Guardar script (.R)",
-                                class = "btn-outline-primary"))
+                                class = "btn-outline-primary"),
+          shiny::actionButton(ns("btn_go_apply"), "Aplicar a datos nuevos",
+                              icon = shiny::icon("arrow-right"),
+                              class = "btn-outline-secondary"))
       )
     })
+
+    shiny::observeEvent(input$btn_go_apply, go_to("step6"))
 
     output$final_metrics <- shiny::renderTable({
       fr <- final_result()
@@ -548,6 +567,16 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
                         main = "Importancia de variables")
     })
 
+    shiny::observeEvent(input$btn_send_code_apply, {
+      shiny::req(generated_code)
+      generated_code(final_code())
+      if (!is.null(parent_session)) {
+        bslib::nav_select("main_nav", "panel_code", session = parent_session)
+      }
+      shiny::showNotification("Script de modelado enviado al panel C\u00f3digo R.",
+                              type = "message", duration = 3)
+    })
+
     shiny::observeEvent(input$btn_send_code, {
       shiny::req(generated_code)
       generated_code(final_code())
@@ -586,8 +615,193 @@ mod_ml_server <- function(id, active_dataset, active_name, active_source = NULL,
       contentType = "text/plain"
     )
 
+    # -- Paso 6: aplicar el modelo a datos nuevos ----------------------------
+    output$apply_ui <- shiny::renderUI({
+      fr <- final_result()
+      if (is.null(fr)) return(ml_ui_pending("Entren\u00e1 el modelo final en el paso 4."))
+      nm  <- shiny::isolate(active_name())
+      cur <- shiny::isolate(ops())
+      prev <- fr$spec$apply
+      default_idx <- if (!is.null(prev)) prev$ops_idx
+                     else which(vapply(cur, function(o) !identical(o$type, "filter"), logical(1)))
+      shiny::tagList(
+        shiny::p(class = "small text-muted",
+          "Predice con el modelo final sobre otro conjunto de filas y lo guarda como un ",
+          "dataset nuevo en la pesta\u00f1a Dataset. Los datos se preparan igual que en el ",
+          "entrenamiento: una categor\u00eda que el modelo no vio, o un NA sin imputar, ",
+          "deja la fila sin predicci\u00f3n."),
+        bslib::layout_columns(
+          col_widths = c(6, 6),
+          shiny::div(
+            shiny::selectInput(ns("apply_dataset"), "Dataset sobre el que predecir",
+                               choices = rvisual_join_candidates(),
+                               selected = prev$dataset %||% nm),
+            if (length(cur) > 0) shiny::checkboxGroupInput(ns("apply_ops"),
+              "Operaciones del Constructor a aplicar antes",
+              choiceNames = vapply(cur, function(o) as.character(o$label), "", USE.NAMES = FALSE),
+              choiceValues = seq_along(cur), selected = default_idx),
+            if (length(cur) > 0) shiny::p(class = "small text-muted",
+              "Por defecto se aplican todas menos los filtros: los filtros eligen las filas ",
+              "del entrenamiento y aqu\u00ed se eligen otras.")
+          ),
+          shiny::div(
+            shiny::tags$label(class = "form-label", "Filtro de las filas a predecir (opcional)"),
+            shiny::div(class = "d-flex gap-2",
+              shiny::selectInput(ns("apply_f_col"), NULL, choices = c("(sin filtro)" = ""),
+                                 width = "45%"),
+              shiny::selectInput(ns("apply_f_op"), NULL,
+                                 choices = c("==", "!=", ">", ">=", "<", "<="),
+                                 selected = prev$filter$params$op %||% "==", width = "20%"),
+              shiny::textInput(ns("apply_f_val"), NULL,
+                               value = prev$filter$params$value %||% "", width = "35%")),
+            shiny::textInput(ns("apply_output"), "Nombre del dataset resultado",
+                             value = prev$output %||% paste0(nm, "_pred")),
+            shiny::uiOutput(ns("apply_count"))
+          )
+        ),
+        shiny::actionButton(ns("btn_apply_model"), "Aplicar modelo",
+                            icon = shiny::icon("wand-magic-sparkles"), class = "btn-primary")
+      )
+    })
+
+    # Dataset destino con las operaciones elegidas (sin el filtro)
+    apply_base <- shiny::reactive({
+      shiny::req(final_result(), input$apply_dataset)
+      df <- if (identical(input$apply_dataset, active_name())) active_dataset()
+            else tryCatch(rvisual_find_dataset(input$apply_dataset), error = function(e) NULL)
+      shiny::req(df)
+      idx <- as.integer(input$apply_ops)
+      sel <- ops()[intersect(idx, seq_along(ops()))]
+      tryCatch(as.data.frame(apply_operations(df, sel)),
+               error = function(e) structure(conditionMessage(e), class = "ml_apply_error"))
+    })
+
+    shiny::observe({
+      base <- apply_base()
+      cols <- if (is.data.frame(base)) names(base) else character(0)
+      prev <- shiny::isolate(input$apply_f_col)
+      if (is.null(prev) || !nzchar(prev)) {
+        fr <- shiny::isolate(final_result())
+        prev <- fr$spec$apply$filter$params$col %||% ""
+      }
+      shiny::updateSelectInput(session, "apply_f_col",
+        choices = c("(sin filtro)" = "", cols),
+        selected = if (prev %in% cols) prev else "")
+    })
+
+    apply_filter_op <- shiny::reactive({
+      col <- input$apply_f_col %||% ""
+      val <- trimws(input$apply_f_val %||% "")
+      if (!nzchar(col) || !nzchar(val)) return(NULL)
+      op_filter(col, input$apply_f_op, val)
+    })
+
+    output$apply_count <- shiny::renderUI({
+      base <- apply_base()
+      if (!is.data.frame(base)) {
+        return(shiny::div(class = "alert alert-danger py-1 small",
+          "Las operaciones elegidas no se pueden aplicar a este dataset: ", unclass(base)))
+      }
+      f <- apply_filter_op()
+      n <- tryCatch(nrow(if (is.null(f)) base else apply_operations(base, list(f))),
+                    error = function(e) NA_integer_)
+      falta <- setdiff(final_result()$spec$predictors, names(base))
+      shiny::tagList(
+        shiny::p(class = "small mb-1", if (is.na(n)) "El filtro no se puede aplicar."
+                 else paste0("Filas a predecir: ", ml_ui_format_number(n))),
+        if (length(falta) > 0) shiny::div(class = "alert alert-danger py-1 small",
+          "Faltan predictores en este dataset: ", paste(falta, collapse = ", "))
+      )
+    })
+
+    shiny::observeEvent(input$btn_apply_model, {
+      fr <- final_result()
+      shiny::req(fr)
+      dest <- input$apply_dataset
+      out_name <- trimws(input$apply_output %||% "")
+      if (!nzchar(out_name) || !identical(make.names(out_name), out_name)) {
+        shiny::showNotification(paste0(
+          "El nombre del resultado tiene que ser un nombre v\u00e1lido de R ",
+          "(letras, n\u00fameros, punto y gui\u00f3n bajo; sin espacios)."),
+          type = "error", duration = 8)
+        return()
+      }
+      src_out <- rvisual_source(out_name)
+      if (out_name %in% c(active_name(), dest) ||
+          (exists(out_name, envir = rvisual_env(), inherits = FALSE) &&
+           !identical(src_out$kind, "modelo_ml"))) {
+        shiny::showNotification(paste0(
+          "Ya hay un dataset llamado '", out_name, "'. Eleg\u00ed otro nombre."),
+          type = "error", duration = 8)
+        return()
+      }
+      spec <- fr$spec
+      spec$apply <- ml_apply_spec(
+        dest, ops_idx = as.integer(input$apply_ops), filter = apply_filter_op(),
+        output = out_name,
+        source = if (identical(dest, active_name())) NULL else rvisual_source(dest))
+      a <- shiny::withProgress(message = "Aplicando el modelo...", value = 0.4, {
+        ml_run_apply(fr$result, spec, active_name(), ops())
+      })
+      if (!isTRUE(a$ok)) {
+        shiny::showNotification(a$error, type = "error", duration = 10)
+        return()
+      }
+      fr$spec <- spec          # el script entregado incluye la seccion 9
+      final_result(fr)
+      apply_result(a)
+      if (!is.null(add_dataset)) {
+        add_dataset(out_name, a$data, list(kind = "modelo_ml"))
+      }
+    })
+
+    output$apply_result_ui <- shiny::renderUI({
+      a <- apply_result()
+      if (is.null(a)) return(NULL)
+      unseen <- a$unseen[a$unseen > 0]
+      sin_pred <- a$n - a$n_pred
+      out_name <- final_result()$spec$apply$output
+      shiny::tagList(
+        shiny::hr(),
+        bslib::layout_columns(
+          col_widths = c(3, 3, 3, 3),
+          ml_ui_stat("Filas", ml_ui_format_number(a$n)),
+          ml_ui_stat("Con predicci\u00f3n", ml_ui_format_number(a$n_pred)),
+          ml_ui_stat("Sin predicci\u00f3n", ml_ui_format_number(sin_pred)),
+          ml_ui_stat("Tiempo", paste0(format(round(a$elapsed, 1), decimal.mark = ","), " s"))
+        ),
+        if (length(unseen) > 0) shiny::div(class = "alert alert-warning py-2 mt-2 small",
+          "Categor\u00edas que el modelo no vio en el entrenamiento: ",
+          paste0(names(unseen), " (", ml_ui_format_number(unseen), " filas)", collapse = ", "),
+          "."),
+        shiny::div(class = "alert alert-success py-2 mt-2 small",
+          shiny::icon("circle-check"), " Se agreg\u00f3 el dataset ", shiny::strong(out_name),
+          " en la pesta\u00f1a Dataset, con las columnas ",
+          paste(a$columns, collapse = ", "), ". El script del modelado ahora incluye ",
+          "esta aplicaci\u00f3n (secci\u00f3n 9)."),
+        DT::DTOutput(ns("apply_table")),
+        shiny::div(class = "d-flex gap-2 flex-wrap mt-2",
+          shiny::actionButton(ns("btn_send_code_apply"), "Enviar a C\u00f3digo R",
+                              icon = shiny::icon("code"), class = "btn-primary"))
+      )
+    })
+
+    output$apply_table <- DT::renderDT({
+      a <- apply_result()
+      shiny::req(a)
+      d <- utils::head(a$data, 200)
+      d <- d[, c(a$columns, setdiff(names(d), a$columns)), drop = FALSE]
+      # Solo las columnas agregadas: el resto se muestra como en el dataset
+      num <- which(names(d) %in% a$columns & vapply(d, is.double, logical(1)))
+      tab <- DT::datatable(d, rownames = FALSE, class = "table table-sm",
+                           options = list(pageLength = 10, scrollX = TRUE, dom = "tip"))
+      if (length(num) > 0)
+        tab <- DT::formatRound(tab, columns = num, digits = 4, mark = ".", dec.mark = ",")
+      tab
+    })
+
     invisible(list(diagnosis = diagnosis, run_result = run_result,
-                   final_result = final_result))
+                   final_result = final_result, apply_result = apply_result))
   })
 }
 

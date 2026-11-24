@@ -38,13 +38,19 @@ rvisual_server <- function(input, output, session) {
               detail = list(timestamp = as.character(Sys.time())))
 
   # -- M\u00f3dulos -----------------------------------------------------------
+  # Datasets nuevos creados por otros modulos (hoy: las predicciones del
+  # panel Modelado). El modulo Dataset los agrega a su lista sin cambiar el
+  # dataset activo.
+  incoming_dataset <- shiny::reactiveVal(NULL)
+
   mod_dataset_server(
     id              = "dataset",
     active_dataset  = active_dataset,
     active_name     = active_dataset_name,
     history         = session_history,
     operation_stack = operation_stack,
-    active_source   = active_dataset_source
+    active_source   = active_dataset_source,
+    incoming        = incoming_dataset
   )
 
   mod_explorer_server(
@@ -70,7 +76,11 @@ rvisual_server <- function(input, output, session) {
     active_source   = active_dataset_source,
     operation_stack = operation_stack,   # solo lectura
     generated_code  = generated_code,    # solo al pulsar "Enviar a Codigo R"
-    parent_session  = session
+    parent_session  = session,
+    add_dataset     = function(name, data, source) {  # solo al pulsar "Aplicar modelo"
+      incoming_dataset(list(name = name, data = data, source = source,
+                            at = Sys.time()))
+    }
   )
 
   mod_code_server(

@@ -48,7 +48,7 @@ system.file("extdata", "LEEME.md", package = "rvisual")
 
 Los ejemplos de esta guía usan ese dataset, cargado en el panel Dataset con el nombre `ech`.
 
-## Los cinco pasos
+## Los seis pasos
 
 ### 1. Objetivo
 
@@ -112,6 +112,21 @@ El modelo elegido se entrena con todo el conjunto de entrenamiento y se evalúa 
 - **Ejecutar en consola:** corre el script en tu sesión (crea objetos y guarda el modelo en el directorio de trabajo; pide confirmación).
 - **Guardar modelo (.rds)** y **Guardar script (.R)**.
 
+### 6. Aplicar a datos nuevos
+
+Predice con el modelo final sobre otro conjunto de filas y guarda el resultado como un **dataset nuevo** en la pestaña Dataset (el dataset activo no cambia). Se elige:
+
+- **El dataset** sobre el que predecir: el mismo del entrenamiento u otro cargado.
+- **Qué operaciones del Constructor aplicar antes.** Por defecto, todas menos los filtros: los filtros eligieron las filas del entrenamiento y aquí se eligen otras. Un join que trae predictores, en cambio, hace falta.
+- **Un filtro** para las filas a predecir (por ejemplo `A_IMPUTAR == 1` para los precios faltantes).
+- **El nombre** del dataset resultado.
+
+Los datos nuevos se preparan igual que el entrenamiento: mismos tipos, mismos niveles de los factores e imputación (si se eligió) con la referencia del entrenamiento, nunca con los datos nuevos. Una categoría que el modelo no vio, o un NA sin imputar, deja la fila sin predicción; el panel informa cuántas filas quedaron así y por qué variable.
+
+Columnas que se agregan: `pred_<objetivo>` en regresión; `prob_<clase positiva>` y `clase_pred` (umbral 0,5) en clasificación binaria; `prob_<clase>` por cada clase y `clase_pred` en multiclase.
+
+Al aplicar, el script del modelado suma la sección 9, así que **Enviar a Código R**, **Ejecutar en consola** y **Guardar script** reproducen también la predicción. El dataset resultado se puede usar en el Constructor (por ejemplo para comparar contra otro método con *Crear variable* y *Agrupar y resumir*) o exportar desde la pestaña Dataset.
+
 ## El script generado
 
 El script es autocontenido y tiene siempre las mismas secciones:
@@ -124,6 +139,7 @@ El script es autocontenido y tiene siempre las mismas secciones:
 6. Modelos candidatos, cada uno con `ajustar(d)` y `predecir(a, nuevos)`.
 7. Comparación por validación cruzada.
 8. Modelo final y evaluación en test.
+9. Aplicación a datos nuevos (solo si se usó el paso 6).
 
 Las métricas que muestra el panel son exactamente las que produce el script: el panel ejecuta el mismo código (sin el paso de carga, porque los datos ya están en memoria). Con la misma semilla, el script da los mismos números.
 

@@ -106,8 +106,76 @@ ml_run <- function(spec, data, df_name = "datos_rvisual", ops = list(),
       observed   = observed,
       predicted  = predicted
     )
+    # Entorno de la ejecucion: ml_run_apply() continua desde aqui
+    result$env <- env
   }
   result
+}
+
+#' Aplicar el modelo final a datos nuevos dentro del addin
+#'
+#' Ejecuta la seccion 9 del script (ver \code{ml_code_apply()}) en el
+#' entorno donde \code{ml_run()} entreno el modelo final, sin volver a
+#' entrenar. Es el mismo codigo que se entrega en el script.
+#'
+#' @param final Resultado de \code{ml_run()} con modelo final (debe traer
+#'   \code{env}).
+#' @param spec Especificacion con \code{final} y \code{apply}.
+#' @param df_name Nombre del dataset del entrenamiento.
+#' @param ops Operaciones del Constructor.
+#' @return Lista con \code{ok}, \code{error}, \code{data} (dataset
+#'   resultado), \code{columns} (columnas agregadas), \code{n},
+#'   \code{n_pred}, \code{unseen} (conteo de categorias no vistas por
+#'   variable), \code{elapsed} y \code{code}.
+#' @keywords internal
+ml_run_apply <- function(final, spec, df_name, ops = list()) {
+  out <- list(ok = FALSE, error = NULL, data = NULL, columns = character(0),
+              n = NA_integer_, n_pred = NA_integer_, unseen = integer(0),
+              elapsed = NA_real_, code = NULL)
+  env <- final$env
+  if (is.null(env) || is.null(spec$apply) || is.null(spec$final)) {
+    out$error <- "Primero hay que entrenar el modelo final (paso 4)."
+    return(out)
+  }
+  ap <- spec$apply
+  code <- ml_code_apply(spec, df_name, ops, source = NULL)
+  out$code <- code
+
+  # Datos en memoria: el dataset destino y las segundas tablas de los joins
+  nombres <- c(ap$dataset, unlist(lapply(ops, function(op)
+    if (identical(op$type, "join")) op$params$right_df)))
+  for (nm in setdiff(unique(nombres), ls(env))) {
+    df <- tryCatch(rvisual_find_dataset(nm), error = function(e) NULL)
+    if (!is.null(df)) assign(nm, df, envir = env)
+  }
+
+  restore_seed <- ml_preserve_seed()
+  on.exit(restore_seed(), add = TRUE)
+  t0 <- proc.time()[["elapsed"]]
+  res <- tryCatch({
+    suppressWarnings(utils::capture.output(eval(parse(text = code), envir = env)))
+    TRUE
+  }, error = function(e) conditionMessage(e))
+  out$elapsed <- proc.time()[["elapsed"]] - t0
+  if (!isTRUE(res)) {
+    out$error <- paste0("Error al aplicar el modelo: ", res)
+    return(out)
+  }
+
+  data <- get(ap$output, envir = env)
+  classes <- if (spec$task == "multiclass") get("clases", envir = env) else NULL
+  out$columns <- ml_apply_columns(spec, classes)
+  out$data <- data
+  out$n <- nrow(data)
+  out$n_pred <- sum(env$completos)
+  ref <- env$entrenamiento_final
+  out$unseen <- vapply(spec$predictors, function(v) {
+    if (!is.factor(ref[[v]])) return(0L)
+    x <- as.character(env$nuevos[[v]])
+    sum(!is.na(x) & !x %in% levels(ref[[v]]))
+  }, integer(1))
+  out$ok <- TRUE
+  out
 }
 
 #' Aplicar operaciones del Constructor sin propagar errores

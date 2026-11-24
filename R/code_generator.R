@@ -147,6 +147,11 @@ generate_load_step <- function(df_name, source) {
       )
     },
 
+    "modelo_ml" = paste0(
+      "# '", df_name, "' se cre\u00f3 en el panel Modelado (ML) de RVisual.\n",
+      "# Ejecut\u00e1 antes el script de modelado: su secci\u00f3n 9 lo deja con este nombre."
+    ),
+
     "entorno" = paste0(
       "# '", df_name, "' ya exist\u00eda en tu entorno de R antes de abrir RVisual.\n",
       "# Este script asume que sigue disponible con ese nombre; si no, ",

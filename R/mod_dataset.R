@@ -100,7 +100,8 @@ mod_dataset_ui <- function(id) {
 #   history         - reactiveVal(list())para el historial de sesi\u00f3n
 
 mod_dataset_server <- function(id, active_dataset, active_name, history,
-                               operation_stack = NULL, active_source = NULL) {
+                               operation_stack = NULL, active_source = NULL,
+                               incoming = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -116,6 +117,20 @@ mod_dataset_server <- function(id, active_dataset, active_name, history,
     # (el join del Constructor) puedan generar el paso de carga de un
     # segundo dataset
     shiny::observe(rvisual_set_sources(rv$sources))
+
+    # Datasets creados por otros modulos (por ejemplo, las predicciones del
+    # panel Modelado): se agregan a la lista sin cambiar el dataset activo
+    if (!is.null(incoming)) {
+      shiny::observeEvent(incoming(), {
+        inc <- incoming()
+        shiny::req(is.list(inc), is.character(inc$name), is.data.frame(inc$data))
+        rv$datasets[[inc$name]] <- inc$data
+        rv$sources[[inc$name]]  <- inc$source
+        assign(inc$name, inc$data, envir = rvisual_env())
+        history_log(history, "dataset_created",
+                    list(name = inc$name, nrow = nrow(inc$data), ncol = ncol(inc$data)))
+      })
+    }
 
     # Propaga tanto el dataset activo como su fuente (para poder regenerar
     # el "paso de carga" standalone en el codigo generado)
