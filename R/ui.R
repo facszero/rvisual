@@ -6,10 +6,12 @@
 #' @return Un objeto shiny.tag con la UI completa
 #' @import shiny bslib htmltools
 rvisual_ui <- function() {
+  rvisual_add_resource_path()
   bslib::page_navbar(
     id = "main_nav",
     title = shiny::tags$span(
-      shiny::tags$img(src = "rvisual_logo.png", height = "24px", style = "margin-right:8px;"),
+      shiny::tags$img(src = "rvisual-www/rvisual_logo.svg", height = "26px",
+                      alt = "", style = "margin-right:8px; vertical-align:-6px;"),
       "RVisual"
     ),
     theme = bslib::bs_theme(
@@ -18,7 +20,7 @@ rvisual_ui <- function() {
       primary    = "#2C6FAC"
     ),
     header = shiny::tags$head(
-      shiny::tags$link(rel = "stylesheet", href = "custom.css")
+      shiny::tags$link(rel = "stylesheet", href = "rvisual-www/custom.css")
     ),
     window_title = "RVisual",
 
@@ -81,4 +83,17 @@ rvisual_ui <- function() {
                         title = "Ver historial de operaciones")
     )
   )
+}
+
+#' Publicar los recursos estaticos del paquete (inst/www)
+#'
+#' Dentro de un paquete, Shiny no sirve \code{inst/www} automaticamente:
+#' sin este registro ni el logo ni \code{custom.css} llegan al navegador.
+#'
+#' @return Invisiblemente, la ruta registrada.
+#' @keywords internal
+rvisual_add_resource_path <- function() {
+  www <- system.file("www", package = "rvisual")
+  if (nzchar(www)) shiny::addResourcePath("rvisual-www", www)
+  invisible(www)
 }

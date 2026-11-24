@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="RVisual">
+  <rect x="1" y="1" width="30" height="30" rx="7" fill="#ffffff"/>
+  <rect x="7" y="17" width="4.5" height="9" rx="1.2" fill="#2C6FAC"/>
+  <rect x="13.75" y="12" width="4.5" height="14" rx="1.2" fill="#2C6FAC"/>
+  <rect x="20.5" y="7" width="4.5" height="19" rx="1.2" fill="#2C6FAC"/>
+  <path d="M6.5 14.5 L13.5 9.5 L19 11.5 L25.5 5" fill="none" stroke="#F0A202" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
