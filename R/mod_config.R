@@ -25,7 +25,7 @@ mod_config_ui <- function(id) {
       shiny::passwordInput(ns("api_key"), "API Key:", placeholder = "sk-..."),
       shiny::div(
         class = "alert alert-info small p-2",
-        shiny::icon("lock"), " Tu API key se guarda localmente y nunca se comparte."
+        shiny::icon("lock"), " ", rvisual_key_storage_label()
       ),
       bslib::card_footer(
         shiny::actionButton(ns("btn_test_connection"), "Probar conexi\u00f3n",
@@ -92,7 +92,11 @@ mod_config_server <- function(id, ai_config) {
         allow_sample = input$allow_sample,
         allow_schema = input$allow_schema
       )
-      config_save(cfg)
+      # Conservar lo demas que haya en el archivo (por ejemplo, las ultimas
+      # conexiones a bases de datos): antes se perdia al guardar
+      guardado <- config_load()
+      guardado[c("api_key", "keyring_api")] <- NULL
+      config_save(utils::modifyList(guardado, cfg))
       ai_config(cfg)
       shiny::showNotification("Configuraci\u00f3n guardada.", type = "message")
     })

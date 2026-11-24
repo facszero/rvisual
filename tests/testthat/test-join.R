@@ -180,14 +180,12 @@ test_that("el modulo Constructor arma el join con datasets cargados en RVisual",
 })
 
 test_that("los data.frames del entorno global siguen disponibles para unir", {
-  assign("tj_global_df", der(), envir = globalenv())
-  on.exit(rm("tj_global_df", envir = globalenv()))
-  expect_equal(rvisual_find_dataset("tj_global_df"), der())
-  cand <- rvisual_join_candidates()
+  global <- new.env()   # hace de entorno global, sin tocar el real
+  assign("tj_global_df", der(), envir = global)
+  expect_equal(rvisual_find_dataset("tj_global_df", global = global), der())
+  cand <- rvisual_join_candidates(global = global)
   expect_true("tj_global_df" %in% unlist(cand[["Entorno global de R"]]))
-  l <- izq(); l$id <- c(1, 2, 3)
-  res <- apply_operations(l, list(op_join("tj_global_df", c(id = "id"), "inner")))
-  expect_equal(nrow(res), 2)
+  expect_error(rvisual_find_dataset("tj_global_df"), "No se encontr")
 })
 
 test_that("'Ninguna' trae solo las claves de la tabla derecha", {

@@ -242,7 +242,7 @@ mod_ai_server <- function(id, active_dataset, active_name, operation_stack,
           shiny::observeEvent(input[[btn_id]], {
             output_lines <- tryCatch({
               utils::capture.output({
-                val <- eval(parse(text = msg$code), envir = .GlobalEnv)
+                val <- rvisual_eval_code(msg$code)$value
                 if (!is.null(val)) print(val)
               })
             }, error = function(e) {

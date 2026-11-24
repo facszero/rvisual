@@ -4,7 +4,10 @@
 \alias{rvisual_join_candidates}
 \title{Datasets disponibles para unir}
 \usage{
-rvisual_join_candidates()
+rvisual_join_candidates(global = globalenv())
+}
+\arguments{
+\item{global}{Entorno global de R (parametro para los tests).}
 }
 \value{
 Lista nombrada con dos grupos (para \code{selectInput}): los

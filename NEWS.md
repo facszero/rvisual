@@ -1,11 +1,11 @@
-# rvisual (en desarrollo)
+# rvisual 0.3.0
 
 ## Nuevo panel: Modelado (ML)
 
-* Asistente de cinco pasos para aprendizaje supervisado sobre datos
+* Asistente de seis pasos para aprendizaje supervisado sobre datos
   tabulares: objetivo, diagnóstico, partición y modelos, comparación por
-  validación cruzada y modelo final. Regresión, clasificación binaria y
-  multiclase. Ver `vignette("modelado", package = "rvisual")`.
+  validación cruzada, modelo final y aplicación a datos nuevos.
+  Regresión, clasificación binaria y multiclase. Ver `vignette("modelado", package = "rvisual")`.
 * **Diagnóstico** con reglas explícitas: identificadores, alta
   cardinalidad, NA, pocas filas, muchos términos, clases desbalanceadas,
   muchos ceros, asimetría y **posible fuga de información** (las variables
@@ -38,6 +38,18 @@
   dataset activo vino de un archivo, avisa si ese archivo está en el
   directorio: el código generado lo carga por su nombre.
 
+## Seguridad del Asistente IA
+
+* Si el paquete `keyring` está instalado y el sistema tiene un llavero
+  (Administrador de credenciales de Windows, Llavero de macOS, Secret
+  Service en Linux), la API key se guarda allí y no en el archivo de
+  configuración. Sin llavero, todo sigue como antes; la pantalla de
+  Configuración dice dónde quedó la clave.
+* El respaldo por `curl` del sistema ya no pone la API key en la línea de
+  comando (visible para otros procesos): los encabezados van en un archivo
+  temporal que se borra al terminar.
+* Google Gemini recibe la clave en un encabezado y no en la URL.
+
 ## Datos de ejemplo
 
 * Nuevo juego de datos sintético `ech_sintetica` (2.213 personas, 17
@@ -47,6 +59,17 @@
 
 ## Correcciones
 
+* **Código R → Ejecutar** fallaba con datasets que solo existen dentro de
+  RVisual (por ejemplo, las predicciones del panel Modelado). Ahora el
+  código los encuentra, sin escribirlos en el entorno global. Lo mismo al
+  ejecutar código desde el chat del Asistente IA.
+* **Configuración:** guardar la configuración de IA borraba las últimas
+  conexiones a bases de datos guardadas.
+* `launch_rvisual()` restaura la opción `shiny.maxRequestSize` del usuario
+  al cerrar la app.
+* El `NAMESPACE` se genera completo con roxygen2 (antes estaba escrito a
+  mano y desactualizado). La API pública no cambia: solo
+  `launch_rvisual()`.
 * **Constructor:** los diálogos ofrecían las columnas del dataset original
   y no las del resultado actual. Una variable creada con *Crear variable*
   no se podía usar después (por ejemplo, para calcular su mediana en

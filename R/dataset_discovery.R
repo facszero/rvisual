@@ -9,10 +9,10 @@ NULL
 
 #' Listar data.frames en el entorno global
 #'
+#' @param env Entorno donde buscar (por defecto, el global).
 #' @return Lista de listas, cada una con \code{name}, \code{nrow}, \code{ncol}.
 #' @keywords internal
-discover_datasets <- function() {
-  env    <- .GlobalEnv
+discover_datasets <- function(env = globalenv()) {
   names_ <- ls(envir = env)
   Filter(Negate(is.null), lapply(names_, function(nm) {
     obj <- get(nm, envir = env)

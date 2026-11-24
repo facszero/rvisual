@@ -104,9 +104,14 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
       result <- tryCatch({
         val          <- NULL
         output_lines <- utils::capture.output({
-          val <- eval(parse(text = generated_code()), envir = .GlobalEnv)
+          res <- rvisual_eval_code(generated_code())
+          val <- res$value
           if (!is.null(val)) print(val)
         })
+        if (length(res$from_rvisual) > 0)
+          output_lines <- c(paste0("# Se us\u00f3 la copia cargada en RVisual de: ",
+                                   paste(res$from_rvisual, collapse = ", ")),
+                            output_lines)
         # Guardar el valor para exportaci\u00f3n
         last_result(val)
         list(success = TRUE,
@@ -176,7 +181,7 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
         if (is.null(df)) {
           # Si no hay resultado previo, ejecutar el c\u00f3digo ahora
           df <- tryCatch(
-            eval(parse(text = generated_code()), envir = .GlobalEnv),
+            rvisual_eval_code(generated_code())$value,
             error = function(e) NULL
           )
         }
@@ -209,7 +214,7 @@ mod_code_server <- function(id, generated_code, active_dataset, active_name) {
         df <- last_result()
         if (is.null(df)) {
           df <- tryCatch(
-            eval(parse(text = generated_code()), envir = .GlobalEnv),
+            rvisual_eval_code(generated_code())$value,
             error = function(e) NULL
           )
         }

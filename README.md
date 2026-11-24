@@ -140,7 +140,7 @@ Acción visual → operation_model → code_generator → código R limpio
 | 5 | Integración IA multi-proveedor | ✅ Completo |
 | 6 | Guardar archivos + exportar resultados | ✅ Completo |
 | 7 | UX, testing completo, CRAN | ✅ Completo (0.1.1 en CRAN) |
-| 8 | Módulo de Machine Learning — fase 1 | 🔄 En desarrollo |
+| 8 | Módulo de Machine Learning — fase 1 | ✅ Completo (0.3.0) |
 
 ---
 

@@ -86,17 +86,18 @@ http_post_json <- function(url, headers, body_list) {
   }, error = function(e1) {
     # Fallback: curl del sistema (respeta proxy del SO autom\u00e1ticamente)
     if (nzchar(Sys.which("curl"))) {
-      header_args <- paste(
-        sapply(names(headers), function(h)
-          paste0('-H "', h, ': ', headers[[h]], '"')),
-        collapse = " "
-      )
+      # Los encabezados (con la clave de API) van en un archivo temporal y
+      # no en la linea de comando, que otros procesos de la maquina pueden
+      # ver. Requiere curl >= 7.55 (incluido en Windows 10 y posteriores).
       proxy_arg <- if (nzchar(proxy)) paste0('-x "', proxy, '" ') else ""
+      tmp_head <- tempfile(fileext = ".txt")
       tmp_body <- tempfile(fileext = ".json")
       tmp_out  <- tempfile(fileext = ".json")
+      on.exit(unlink(c(tmp_head, tmp_body, tmp_out)), add = TRUE)
+      writeLines(paste0(names(headers), ": ", unlist(headers)), tmp_head)
       writeLines(body_json, tmp_body)
-      cmd <- sprintf('curl -s -X POST %s%s -d @"%s" "%s" -o "%s"',
-                     proxy_arg, header_args, tmp_body, url, tmp_out)
+      cmd <- sprintf('curl -s -X POST %s-H @"%s" -d @"%s" "%s" -o "%s"',
+                     proxy_arg, tmp_head, tmp_body, url, tmp_out)
       system(cmd, wait = TRUE)
       if (file.exists(tmp_out) && file.size(tmp_out) > 0) {
         jsonlite::fromJSON(tmp_out, simplifyVector = FALSE)
@@ -152,13 +153,16 @@ provider_openai <- function(cfg, system_prompt, user_prompt) {
 
 provider_gemini <- function(cfg, system_prompt, user_prompt) {
   model_id <- cfg$model %||% "gemini-1.5-flash"
+  # La clave va en un encabezado y no en la URL, para que no quede en
+  # registros de proxies ni en la linea de comando
   url      <- paste0(
     "https://generativelanguage.googleapis.com/v1beta/models/",
-    model_id, ":generateContent?key=", cfg$api_key
+    model_id, ":generateContent"
   )
   parsed <- http_post_json(
     url     = url,
-    headers = list("Content-Type" = "application/json"),
+    headers = list("Content-Type" = "application/json",
+                   "x-goog-api-key" = cfg$api_key),
     body_list = list(
       contents = list(list(
         parts = list(list(text = paste0(system_prompt, "\n\n", user_prompt)))

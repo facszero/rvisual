@@ -4,7 +4,10 @@
 \alias{discover_datasets}
 \title{Listar data.frames en el entorno global}
 \usage{
-discover_datasets()
+discover_datasets(env = globalenv())
+}
+\arguments{
+\item{env}{Entorno donde buscar (por defecto, el global).}
 }
 \value{
 Lista de listas, cada una con \code{name}, \code{nrow}, \code{ncol}.

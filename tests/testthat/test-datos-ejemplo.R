@@ -79,8 +79,9 @@ test_that("Constructor: filtrar, recodificar y resumir sobre el ejemplo", {
 test_that("Constructor: unir con la tabla de departamentos", {
   deptos <- utils::read.csv(ruta_ej("departamentos.csv"), fileEncoding = "UTF-8",
                             stringsAsFactors = FALSE)
-  assign("departamentos_ej", deptos, envir = globalenv())
-  on.exit(rm("departamentos_ej", envir = globalenv()))
+  # El segundo dataset de un join se busca entre los cargados en RVisual
+  assign("departamentos_ej", deptos, envir = rvisual_env())
+  on.exit(rm("departamentos_ej", envir = rvisual_env()))
   r <- apply_operations(ech(), list(op_join("departamentos_ej", "departamento", "left")))
   expect_false(anyNA(r$region))
   expect_setequal(unique(r$region), c("Montevideo", "Interior"))
