@@ -514,6 +514,8 @@ mod_builder_server <- function(id, active_dataset, active_name,
         shiny::tags$div(class = "d-flex gap-2 mb-1",
           shiny::actionLink(ns("join_cols_all"), "Todas"),
           shiny::tags$span("\u00b7", class = "text-muted"),
+          shiny::actionLink(ns("join_cols_none"), "Ninguna"),
+          shiny::tags$span("\u00b7", class = "text-muted"),
           shiny::actionLink(ns("join_cols_new"),
                             "Solo las que no est\u00e1n en la tabla izquierda")
         ),
@@ -524,6 +526,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
         )
       ))
       rv_join$n_cols <- 1
+      rv_join$none <- FALSE
     })
 
     # Claves elegidas: c(col_izquierda = col_derecha)
@@ -560,17 +563,26 @@ mod_builder_server <- function(id, active_dataset, active_name,
     shiny::observeEvent(join_right_nonkey(), {
       actuales <- input$join_right_cols
       opciones <- join_right_nonkey()
-      sel <- if (is.null(actuales)) opciones else intersect(actuales, opciones)
+      # Vacio por "Ninguna": se respeta; vacio al abrir el dialogo: todas
+      sel <- if (is.null(actuales) && !isTRUE(rv_join$none)) opciones
+             else intersect(if (is.null(actuales)) character(0) else actuales, opciones)
       shiny::updateSelectizeInput(session, "join_right_cols",
         choices = opciones, selected = sel)
     })
 
     shiny::observeEvent(input$join_cols_all, {
+      rv_join$none <- FALSE
       shiny::updateSelectizeInput(session, "join_right_cols",
         selected = join_right_nonkey())
     })
 
+    shiny::observeEvent(input$join_cols_none, {
+      rv_join$none <- TRUE
+      shiny::updateSelectizeInput(session, "join_right_cols", selected = character(0))
+    })
+
     shiny::observeEvent(input$join_cols_new, {
+      rv_join$none <- FALSE
       shiny::updateSelectizeInput(session, "join_right_cols",
         selected = setdiff(join_right_nonkey(), names(join_left())))
     })
@@ -604,7 +616,7 @@ mod_builder_server <- function(id, active_dataset, active_name,
       )
     })
 
-    rv_join <- shiny::reactiveValues(n_cols = 1)
+    rv_join <- shiny::reactiveValues(n_cols = 1, none = FALSE)
 
     shiny::observeEvent(input$join_add_col, {
       rv_join$n_cols <- rv_join$n_cols + 1
